@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Stack, AppBar, Toolbar, Typography, Button } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
-import sawMillLogo from "../../assets/images/sawMillLogo.png";
+import dwwLogo from "../../assets/images/dwwLogo4.png";
 
 export default function HeaderAuth() {
   const location = useLocation();
@@ -18,7 +18,7 @@ export default function HeaderAuth() {
       >
         <Toolbar>
           <Box component={Link} to={"/"} paddingX={2}>
-            <img alt="Logo" src={sawMillLogo} width={60} />
+            <img alt="Logo" src={dwwLogo} width={60} />
           </Box>
 
           <Stack

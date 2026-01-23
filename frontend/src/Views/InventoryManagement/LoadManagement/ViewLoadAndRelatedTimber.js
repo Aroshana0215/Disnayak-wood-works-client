@@ -134,7 +134,7 @@ const UpdateCategory = () => {
             justifyContent="flex-start"
             alignItems="center"
           >
-            <Typography variant="h6" fontWeight="bold" color="primary">
+            <Typography variant="h6" fontWeight="bold" sx={{ color: "#9C6B3D" }}>
               Related Timber details
             </Typography>
           </Stack>
@@ -157,7 +157,7 @@ const UpdateCategory = () => {
                 alignItems="center"
                 spacing={2}
               >
-                <Typography variant="h6" color="primary" align="center">
+                <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
                   Load Details
                 </Typography>
                 <Button
@@ -225,7 +225,7 @@ const UpdateCategory = () => {
                 alignItems="center"
                 spacing={2}
               >
-                <Typography variant="h6" color="primary" align="center">
+                <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
                   Load Details
                 </Typography>
                 <Button

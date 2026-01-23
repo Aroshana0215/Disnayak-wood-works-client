@@ -140,7 +140,7 @@ const AddLoadRelatedTimber = () => {
             alignItems="center"
             spacing={2}
           >
-            <Typography variant="h6" color="primary" align="center">
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
               Add Timber
             </Typography>
           </Stack>
@@ -242,7 +242,7 @@ const AddLoadRelatedTimber = () => {
             </Grid>
           </Grid>
         ))}
-        <IconButton variant="contained" color="primary" onClick={addRow}>
+        <IconButton variant="contained" sx={{ color: "#9C6B3D" }}onClick={addRow}>
           <AddCircleOutlineOutlinedIcon />
         </IconButton>
         <Grid

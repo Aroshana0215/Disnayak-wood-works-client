@@ -230,7 +230,7 @@ const CreateDailyDetails = () => {
     <Grid container justifyContent="center" alignItems="stretch" sx={{ p: 3 }}>
       <Grid item xs={12} md={10}>
         <Paper sx={{ p: 3, borderRadius: 2 }}>
-          <Typography variant="h5" color="primary" align="center" sx={{ mb: 3 }}>
+          <Typography variant="h5" align="center"  sx={{ color: "#9C6B3D", mb: 3 }}>
             Create Daily Record
           </Typography>
           <Grid container component="form" onSubmit={handleSubmit} spacing={3}>
@@ -318,7 +318,7 @@ const CreateDailyDetails = () => {
               </TableContainer>
             </Grid>
             <Grid item xs={12} textAlign="center">
-              <Button type="submit" variant="contained" color="primary" disabled={loading}>
+              <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }} disabled={loading}>
                 {loading ? <CircularProgress size={24} /> : "Submit"}
               </Button>
             </Grid>

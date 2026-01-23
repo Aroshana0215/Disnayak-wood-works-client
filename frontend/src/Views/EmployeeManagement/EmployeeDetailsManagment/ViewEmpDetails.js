@@ -84,7 +84,7 @@ const ViewEmpDetails = () => {
     <Container sx={{ mt: 4 }}>
       <Grid container spacing={4} justifyContent="center">
         <Grid item xs={12} textAlign="center">
-          <Typography variant="h4" color="primary">
+          <Typography variant="h4" sx={{ color: "#9C6B3D" }}>
             Employee Profile
           </Typography>
         </Grid>
@@ -142,7 +142,7 @@ const ViewEmpDetails = () => {
                 <Switch
                   checked={status === "A"}
                   onChange={handleStatusToggle}
-                  color="primary"
+                  sx={{ color: "#9C6B3D" }}
                   disabled={isUpdating}
                 />
                 </FormLabel>
@@ -155,9 +155,8 @@ const ViewEmpDetails = () => {
         <Grid item xs={12} display="flex" justifyContent="center">
           <Button
             variant="contained"
-            color="primary"
+            sx={{ color: "#9C6B3D" , borderRadius: 2}}
             onClick={() => navigate("/employee")}
-            sx={{ borderRadius: 2 }}
           >
             Back
           </Button>

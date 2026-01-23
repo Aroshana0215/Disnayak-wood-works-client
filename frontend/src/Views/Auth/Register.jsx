@@ -156,7 +156,7 @@ const Register = () => {
               <Button
                 type="submit"
                 variant="contained"
-                color="primary"
+                sx={{ color: "#9C6B3D" }}
                 fullWidth
               >
                 Confirm

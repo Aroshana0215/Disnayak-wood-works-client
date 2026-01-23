@@ -17,13 +17,13 @@ import { getStorage } from "firebase/storage";
 
 // Dev configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCOXiwyEFkDRzZRYeqaHaJsw4Sg2mR4Bs0",
-  authDomain: "dts-dev-287e5.firebaseapp.com",
-  projectId: "dts-dev-287e5",
-  storageBucket: "dts-dev-287e5.firebasestorage.app",
-  messagingSenderId: "494170016714",
-  appId: "1:494170016714:web:15167ca0c64d114dc95d33",
-  measurementId: "G-4J325DKHTC"
+  apiKey: "AIzaSyCQn6tSIZFp5ibD7ffh2QWKNmlawJ69jbs",
+  authDomain: "dww-dev.firebaseapp.com",
+  projectId: "dww-dev",
+  storageBucket: "dww-dev.firebasestorage.app",
+  messagingSenderId: "378487047518",
+  appId: "1:378487047518:web:7f45e92fce3c4ca83e3bcf",
+  measurementId: "G-QYRP1F6RLS"
 };
 
 // Initialize Firebase

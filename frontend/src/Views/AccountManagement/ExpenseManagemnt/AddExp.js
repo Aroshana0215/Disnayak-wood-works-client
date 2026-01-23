@@ -94,7 +94,7 @@ const AddExp = () => {
     <Container>
       <Grid container direction="row" justifyContent="center" alignItems="stretch" spacing={2} p={2}>
         <Grid item xs={12}>
-          <Typography variant="h4" color="primary" align="center">
+          <Typography variant="h4" sx={{ color: "#9C6B3D" }} align="center">
             Add Expenses
           </Typography>
         </Grid>
@@ -171,7 +171,7 @@ const AddExp = () => {
                 alignItems: "flex-end",
               }}
             >
-              <Button type="submit" variant="contained" color="primary">
+              <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }}>
                 Create
               </Button>
             </Grid>

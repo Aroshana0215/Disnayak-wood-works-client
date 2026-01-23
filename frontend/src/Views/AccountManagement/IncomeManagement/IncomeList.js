@@ -139,7 +139,7 @@ const IncomeList = () => {
       <Grid container>
         <Grid item xs={12} p={2}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6" fontWeight="bold" color="primary">Income Details</Typography>
+            <Typography variant="h6" fontWeight="bold" sx={{ color: "#9C6B3D" }}>Income Details</Typography>
             <Button
               variant="contained"
               startIcon={<AddCircleOutlineOutlinedIcon />}

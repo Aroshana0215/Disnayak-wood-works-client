@@ -14,7 +14,7 @@ const Landing = () => {
         p={2}
       >
         <Grid item>
-          <Typography variant="h4" color={"primary"}>
+          <Typography variant="h4"   sx={{ color: "#5A2E1A", fontWeight: 600,letterSpacing: "0.5px",}} >
             Welcome
           </Typography>
         </Grid>
@@ -41,7 +41,7 @@ const Landing = () => {
               textAlign: "center",
             }}
           >
-            <Typography variant="h6" color="primary" align="center">
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
               Price card
             </Typography>
           </Stack>
@@ -60,7 +60,7 @@ const Landing = () => {
               borderRadius: 4,
             }}
           >
-            <Typography variant="h6" color="primary">
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
               Load Management
             </Typography>
           </Stack>
@@ -79,7 +79,7 @@ const Landing = () => {
               borderRadius: 4,
             }}
           >
-            <Typography variant="h6" color="primary">
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
               Stock Management
             </Typography>
           </Stack>
@@ -98,7 +98,7 @@ const Landing = () => {
               borderRadius: 4,
             }}
           >
-            <Typography variant="h6" color="primary">
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
               Bill and Order Management
             </Typography>
           </Stack>
@@ -117,7 +117,7 @@ const Landing = () => {
               borderRadius: 4,
             }}
           >
-            <Typography variant="h6" color="primary">
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
               Employee Management
             </Typography>
           </Stack>
@@ -136,7 +136,7 @@ const Landing = () => {
               borderRadius: 4,
             }}
           >
-            <Typography variant="h6" color="primary">
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
               Employee Daily Records
             </Typography>
           </Stack>
@@ -155,7 +155,7 @@ const Landing = () => {
               borderRadius: 4,
             }}
           >
-            <Typography variant="h6" color="primary">
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
               Income Management
             </Typography>
           </Stack>
@@ -174,7 +174,7 @@ const Landing = () => {
               borderRadius: 4,
             }}
           >
-            <Typography variant="h6" color="primary">
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
               Expenses Management
             </Typography>
           </Stack>

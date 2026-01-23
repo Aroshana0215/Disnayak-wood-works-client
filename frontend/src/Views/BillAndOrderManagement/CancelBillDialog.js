@@ -18,7 +18,7 @@ const CancelBillDialog = ({ open, onClose, onConfirm }) => {
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <Button onClick={onClose} sx={{ color: "#9C6B3D" }}>
           No
         </Button>
         <Button onClick={onConfirm} color="error" variant="contained">

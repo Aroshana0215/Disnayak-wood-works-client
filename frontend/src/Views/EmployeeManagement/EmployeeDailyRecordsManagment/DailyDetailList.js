@@ -298,7 +298,7 @@ const DailyDetailList = () => {
         {/* Top Toolbar and Filters */}
         <Grid item xs={12}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6" fontWeight="bold" color="primary">
+            <Typography variant="h6" fontWeight="bold" sx={{ color: "#9C6B3D" }}>
               Daily Employee Details
             </Typography>
             <IconButton
@@ -311,7 +311,7 @@ const DailyDetailList = () => {
                 padding: "5px 15px",
               }}
             >
-              <CalendarMonthIcon fontSize="medium" color="primary" />
+              <CalendarMonthIcon fontSize="medium" sx={{ color: "#9C6B3D" }} />
             </IconButton>
             <Button
               variant="contained"
@@ -452,7 +452,7 @@ const DailyDetailList = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button variant="contained" color="primary" onClick={handleUpdateSave}>
+          <Button variant="contained" sx={{ color: "#9C6B3D" }} onClick={handleUpdateSave}>
             Save
           </Button>
         </DialogActions>

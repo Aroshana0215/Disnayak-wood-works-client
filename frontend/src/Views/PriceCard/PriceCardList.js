@@ -227,7 +227,7 @@ const PriceCardList = () => {
             justifyContent="space-between"
             alignItems="center"
           >
-            <Typography variant="h6" fontWeight="bold" color="primary">
+            <Typography variant="h6" fontWeight="bold" sx={{ color: "#9C6B3D" }}>
               Price Details
             </Typography>
             <Button

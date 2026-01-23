@@ -166,7 +166,7 @@ const ShowRemainWood = () => {
               alignItems="center"
               spacing={2}
             >
-              <Typography variant="h6" color="primary" align="center">
+              <Typography variant="h6"sx={{ color: "#9C6B3D" }} align="center">
                 Update Category
               </Typography>
             </Stack>
@@ -297,7 +297,7 @@ const ShowRemainWood = () => {
               alignItems: "flex-end",
             }}
           >
-            <Button type="submit" variant="contained" color="primary">
+            <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }}>
               Submit
             </Button>
           </Grid>

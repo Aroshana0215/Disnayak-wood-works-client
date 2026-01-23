@@ -183,7 +183,7 @@ console.log("isTimberDust:",isTimberDust);
               alignItems="center"
               spacing={2}
             >
-              <Typography variant="h6" color="primary" align="center">
+              <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
                 Update Category Details
               </Typography>
             </Stack>

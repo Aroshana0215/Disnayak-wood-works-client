@@ -88,7 +88,7 @@ const UpdateWantsWood = () => {
             alignItems="center"
             spacing={2}
           >
-            <Typography variant="h6" color="primary" align="center">
+            <Typography variant="h6"sx={{ color: "#9C6B3D" }} align="center">
               Update Timber
             </Typography>
           </Stack>
@@ -174,7 +174,7 @@ const UpdateWantsWood = () => {
             </Grid>
           </Grid>
         ))}
-        <IconButton color="primary" onClick={addRow}>
+        <IconButton sx={{ color: "#9C6B3D" }} onClick={addRow}>
           <AddCircleOutlineOutlinedIcon />
         </IconButton>
         <Grid

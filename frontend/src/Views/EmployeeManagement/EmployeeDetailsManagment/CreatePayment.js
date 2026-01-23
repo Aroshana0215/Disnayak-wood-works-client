@@ -253,7 +253,7 @@ const CreatePayment = () => {
     <Container>
       <Grid container spacing={2} mt={2}>
         <Grid item xs={12}>
-          <Typography variant="h4" color="primary" align="center" gutterBottom>
+          <Typography variant="h4" sx={{ color: "#9C6B3D" }} align="center" gutterBottom>
             Pay Sheet
           </Typography>
         </Grid>
@@ -294,7 +294,7 @@ const CreatePayment = () => {
               onClick={() => setIsExpanded(!isExpanded)}
               sx={{ cursor: "pointer" }}
             >
-              <Typography variant="h6" color="primary">
+              <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
                 Employee Work Details
               </Typography>
               <IconButton>{isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}</IconButton>
@@ -341,7 +341,7 @@ const CreatePayment = () => {
         {/* Final Form Section */}
         <Grid item xs={12}>
           <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
-            <Typography variant="h6" gutterBottom color="primary">
+            <Typography variant="h6" gutterBottom sx={{ color: "#9C6B3D" }}>
               🧾 Payment Summary
             </Typography>
 
@@ -457,11 +457,10 @@ const CreatePayment = () => {
                   <Button
                     type="submit"
                     variant="contained"
-                    color="primary"
+                    sx={{ color: "#9C6B3D" , mt: 2}}
                     disabled={loading}
                     fullWidth
                     size="large"
-                    sx={{ mt: 2 }}
                   >
                     {loading ? <CircularProgress size={24} /> : "Submit Payment"}
                   </Button>

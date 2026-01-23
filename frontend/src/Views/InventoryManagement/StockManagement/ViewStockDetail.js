@@ -42,7 +42,7 @@ const ViewStockDetail = () => {
             justifyContent="flex-start"
             alignItems="center"
           >
-            <Typography variant="h6" fontWeight="bold" color="primary">
+            <Typography variant="h6" fontWeight="bold" sx={{ color: "#9C6B3D" }}>
               Stock Information
             </Typography>
           </Stack>
@@ -61,8 +61,8 @@ const ViewStockDetail = () => {
             }}
           >
             <Box sx={{ width: "100%" }}>
-              <InventoryIcon color="primary" fontSize="large" />
-              <Typography variant="h6" color="primary">
+              <InventoryIcon sx={{ color: "#9C6B3D" }} fontSize="large" />
+              <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
                 Stock Details
               </Typography>
             </Box>
@@ -106,8 +106,8 @@ const ViewStockDetail = () => {
             }}
           >
             <Box sx={{ width: "100%" }}>
-              <CategoryIcon color="primary" fontSize="large" />
-              <Typography variant="h6" color="primary">
+              <CategoryIcon sx={{ color: "#9C6B3D" }} fontSize="large" />
+              <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
                 Category Details
               </Typography>
             </Box>
@@ -175,8 +175,8 @@ const ViewStockDetail = () => {
             }}
           >
             <Box sx={{ width: "100%" }}>
-              <ForestIcon color="primary" fontSize="large" />
-              <Typography variant="h6" color="primary">
+              <ForestIcon sx={{ color: "#9C6B3D" }} fontSize="large" />
+              <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
                 Timber Details
               </Typography>
             </Box>
