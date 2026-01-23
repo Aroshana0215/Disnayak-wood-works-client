@@ -86,7 +86,7 @@ const UpdateTimberNature = () => {
         p={2}
       >
         <Grid item xs={12}>
-          <Typography variant="h4" color="primary" align="center">
+          <Typography variant="h4" csx={{ color: "#9C6B3D" }} align="center">
             Update timber nature
           </Typography>
         </Grid>
@@ -164,7 +164,7 @@ const UpdateTimberNature = () => {
                 justifyContent: "flex-end",
               }}
             >
-              <Button type="submit" variant="contained" color="primary">
+              <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }}>
                 Update
               </Button>
             </Grid>

@@ -417,7 +417,7 @@ const ViewBillDetails = () => {
             justifyContent="flex-start"
             alignItems="center"
           >
-            <Typography variant="h4" color="primary" align="center">
+            <Typography variant="h4" sx={{ color: "#9C6B3D" }} align="center">
               Bill & Order details
             </Typography>
           </Stack>
@@ -440,7 +440,7 @@ const ViewBillDetails = () => {
                 alignItems="center"
                 spacing={2}
               >
-                <Typography variant="h6" color="primary" align="center">
+                <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
                   Bill details
                 </Typography>
                 <Button
@@ -508,7 +508,7 @@ const ViewBillDetails = () => {
                 alignItems="center"
                 spacing={2}
               >
-                <Typography variant="h6" color="primary" align="center">
+                <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
                   Order details
                 </Typography>
                 <Button

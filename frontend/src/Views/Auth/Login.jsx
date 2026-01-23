@@ -81,7 +81,7 @@ const Login = () => {
           />
           <Button
             variant="contained"
-            color="primary"
+            sx={{ color: "#9C6B3D" }}
             fullWidth
             onClick={(e) => onClickLogin(e)}
           >

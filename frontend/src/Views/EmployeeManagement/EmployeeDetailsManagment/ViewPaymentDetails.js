@@ -95,7 +95,7 @@ const ViewPaymentDetails = () => {
     <Container sx={{ mt: 4 }}>
       <Grid container spacing={4}>
         <Grid item xs={12}>
-          <Typography variant="h4" color="primary" align="center">
+          <Typography variant="h4" sx={{ color: "#9C6B3D" }} align="center">
             Payment Details
           </Typography>
         </Grid>
@@ -145,7 +145,7 @@ const ViewPaymentDetails = () => {
               sx={{ cursor: "pointer" }}
               onClick={() => setShowWorkDetails(!showWorkDetails)}
             >
-              <Typography variant="h6" color="primary">
+              <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
                 Employee Work Details
               </Typography>
               <IconButton>
@@ -203,9 +203,8 @@ const ViewPaymentDetails = () => {
         <Grid item xs={12} display="flex" justifyContent="flex-end">
           <Button
             variant="contained"
-            color="primary"
+            sx={{ color: "#9C6B3D" , borderRadius: 2  }}
             onClick={() => navigate(`/employee/payment-list`)}
-            sx={{ borderRadius: 2 }}
           >
             Back to Payments
           </Button>

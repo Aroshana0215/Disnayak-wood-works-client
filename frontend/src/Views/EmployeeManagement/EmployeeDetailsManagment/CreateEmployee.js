@@ -127,7 +127,7 @@ const CreateEmployee = () => {
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
-        <Typography variant="h4" color="primary" align="center" gutterBottom>
+        <Typography variant="h4" sx={{ color: "#9C6B3D" }} align="center" gutterBottom>
           Employee Details Submission
         </Typography>
         <Grid container component="form" onSubmit={handleSubmit} spacing={2}>
@@ -196,7 +196,7 @@ const CreateEmployee = () => {
             </FormControl>
           </Grid>
           <Grid item xs={12} display="flex" justifyContent="flex-end">
-            <Button type="submit" variant="contained" color="primary" size="large" disabled={loading}>
+            <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }} size="large" disabled={loading}>
               {loading ? <CircularProgress size={24} color="inherit" /> : "Create"}
             </Button>
           </Grid>

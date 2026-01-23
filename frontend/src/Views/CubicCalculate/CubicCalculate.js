@@ -174,7 +174,7 @@ const CubicCalculate = () => {
 
       {/* Add Row */}
       <Box textAlign="left" sx={{ mt: 2 }}>
-        <IconButton color="primary" onClick={addRow}>
+        <IconButton sx={{ color: "#9C6B3D" }} onClick={addRow}>
           <AddCircleIcon fontSize="large" />
         </IconButton>
       </Box>

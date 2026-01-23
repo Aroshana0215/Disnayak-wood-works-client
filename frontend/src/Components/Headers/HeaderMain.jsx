@@ -1,7 +1,7 @@
 import React from "react";
 import { Stack, AppBar, Toolbar, Typography, Box } from "@mui/material";
 import { Link } from "react-router-dom";
-import sawMillLogo from "../../assets/images/sawMillLogo.png";
+import dwwLogo from "../../assets/images/dwwLogo4.png";
 import AccountMenu from "../Menus/AccountMenu";
 
 export default function HeaderMain() {
@@ -17,7 +17,7 @@ export default function HeaderMain() {
       >
         <Toolbar>
           <Box component={Link} to={"/"}>
-            <img alt="Logo" src={sawMillLogo} height={32} />
+            <img alt="Logo" src={dwwLogo} height={32} />
           </Box>
           <Typography component="div" sx={{ flexGrow: 1 }}></Typography>
 

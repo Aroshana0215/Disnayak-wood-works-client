@@ -194,7 +194,7 @@ const UpdateBill = ({ open, onClose, user, bill }) => {
                 }
               />
               <Box mt={2} display="flex" justifyContent="flex-end">
-                <Button variant="contained" color="primary" onClick={handleAdd}>
+                <Button variant="contained"sx={{ color: "#9C6B3D" }} onClick={handleAdd}>
                   Add Advance
                 </Button>
               </Box>

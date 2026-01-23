@@ -382,7 +382,7 @@ const CreateNewBill = () => {
                 alignItems="center"
                 spacing={2}
               >
-                <Typography variant="h6" color="primary" align="center">
+                <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
                   Create a new bill
                 </Typography>
               </Stack>
@@ -456,7 +456,7 @@ const CreateNewBill = () => {
                       <Button
                         variant="contained"
                         type="submit"
-                        color="primary"
+                        sx={{ color: "#9C6B3D" }}
                       >
                         Save
                       </Button>
