@@ -4,15 +4,15 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage"; 
 
-//DTS live configuration
+//DWW live configuration
 // const firebaseConfig = {
-//   apiKey: "AIzaSyCrJEMG2srxm665yfJUJolYSiYX5Pj95vU",
-//   authDomain: "dts-client.firebaseapp.com",
-//   projectId: "dts-client",
-//   storageBucket: "dts-client.appspot.com",
-//   messagingSenderId: "880085947366", 
-//   appId: "1:880085947366:web:ee8010f84df7588733bc27",
-//   measurementId: "G-BBWE0Q93CP",
+//   apiKey: "AIzaSyBkusm510K59Pr-an8ZgRvj293JkVXLhvQ",
+//   authDomain: "dww-client.firebaseapp.com",
+//   projectId: "dww-client",
+//   storageBucket: "dww-client.firebasestorage.app",
+//   messagingSenderId: "185821108041",
+//   appId: "1:185821108041:web:2b3718f765cc75d2316c98",
+//   measurementId: "G-EGG27KCNQV"
 // };
 
 // Dev configuration
