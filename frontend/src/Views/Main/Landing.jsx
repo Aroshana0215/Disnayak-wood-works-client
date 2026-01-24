@@ -179,6 +179,25 @@ const Landing = () => {
             </Typography>
           </Stack>
         </Grid>
+                <Grid item xs={12} sm={6} md={4} padding={2}>
+          <Stack
+            direction="row"
+            justifyContent="center"
+            alignItems="center"
+            component={Link}
+            to={"/cubicCalc"}
+            padding={2}
+            sx={{
+              textDecoration: "none",
+              bgcolor: "background.default",
+              borderRadius: 4,
+            }}
+          >
+            <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
+              Cubic Calculator
+            </Typography>
+          </Stack>
+        </Grid>
       </Grid>
     </Container>
   );
