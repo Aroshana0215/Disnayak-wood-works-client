@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Container,
   Grid,
@@ -52,7 +52,7 @@ const ViewPaymentDetails = () => {
             eid: data.eid_fk,
           });
 
-          setWorkDetail(workDataList);
+          setWorkDetail(workDataList || []);
         }
       } catch (error) {
         console.error("Error fetching payment details:", error.message);
@@ -73,7 +73,7 @@ const ViewPaymentDetails = () => {
     });
   };
 
-  // ✅ Half Day / Full Day (same rule: < 9 hours = half day)
+  // ✅ Half Day / Full Day (rule: < 9 hours = half day)
   const getWorkType = (work) => {
     if (!work?.isPresent) return "-";
     if (!work?.inTime || !work?.outTime) return "-";
@@ -87,6 +87,31 @@ const ViewPaymentDetails = () => {
     const workedHours = (outMins - inMins) / 60;
     return workedHours < 9 ? "Half Day" : "Full Day";
   };
+
+  // ✅ Compute totals from workDetail (for correct Total Half Days display)
+  const computedTotals = useMemo(() => {
+    let totalHalfDays = 0;
+    let totalFullDays = 0;
+
+    (workDetail || []).forEach((w) => {
+      const type = getWorkType(w);
+      if (type === "Half Day") totalHalfDays += 1;
+      if (type === "Full Day") totalFullDays += 1;
+    });
+
+    return {
+      totalHalfDays,
+      totalFullDays,
+    };
+  }, [workDetail]);
+
+  // ✅ Use DB value if exists, otherwise computed
+  const safeHalfDays =
+    paymentDetails?.totalHalfDay !== null &&
+    paymentDetails?.totalHalfDay !== undefined &&
+    String(paymentDetails?.totalHalfDay).trim() !== ""
+      ? paymentDetails.totalHalfDay
+      : computedTotals.totalHalfDays;
 
   if (loading) {
     return (
@@ -131,7 +156,8 @@ const ViewPaymentDetails = () => {
                 { label: "From Date", value: formatDate(paymentDetails.fromDate) },
                 { label: "To Date", value: formatDate(paymentDetails.toDate) },
                 { label: "Total Days", value: paymentDetails.totalDay },
-                { label: "Total Half Days", value: paymentDetails.totalHalfDay },
+                // ✅ FIXED: show correct Half Days
+                { label: "Total Half Days", value: safeHalfDays },
                 { label: "Total OT Hours", value: paymentDetails.totalOt },
                 { label: "Total Advance", value: paymentDetails.totalAdvance },
                 { label: "Reduce Amount", value: paymentDetails.reduceAmount },
@@ -144,7 +170,7 @@ const ViewPaymentDetails = () => {
                     {item.label}
                   </Typography>
                   <Typography fontWeight={500} variant="body1">
-                    {item.value || "-"}
+                    {item.value || item.value === 0 ? item.value : "-"}
                   </Typography>
                 </Box>
               ))}
@@ -177,10 +203,7 @@ const ViewPaymentDetails = () => {
                     <TableCell align="center">Employee</TableCell>
                     <TableCell align="center">Date</TableCell>
                     <TableCell align="center">Is Present</TableCell>
-
-                    {/* ✅ NEW */}
                     <TableCell align="center">Type</TableCell>
-
                     <TableCell align="center">In Time</TableCell>
                     <TableCell align="center">Out Time</TableCell>
                     <TableCell align="center">OT Hours</TableCell>
@@ -206,7 +229,6 @@ const ViewPaymentDetails = () => {
                             />
                           </TableCell>
 
-                          {/* ✅ NEW: Half Day / Full Day */}
                           <TableCell align="center">
                             {work.isPresent ? (
                               <Chip
