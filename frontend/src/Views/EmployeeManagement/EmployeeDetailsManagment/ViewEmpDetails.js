@@ -17,7 +17,10 @@ import {
   InputAdornment,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
-import { getemployeeDetailsById, updateemployeeDetails } from "../../../services/EmployeeManagementService/EmployeeDetailService";
+import {
+  getemployeeDetailsById,
+  updateemployeeDetails,
+} from "../../../services/EmployeeManagementService/EmployeeDetailService";
 import CircleIcon from "@mui/icons-material/Circle";
 import PermIdentityIcon from "@mui/icons-material/PermIdentity";
 import PhoneIcon from "@mui/icons-material/Phone";
@@ -64,6 +67,35 @@ const ViewEmpDetails = () => {
     }
   };
 
+  const formatDateSafe = (value) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? "-" : d.toLocaleDateString();
+  };
+
+  const formatMoneySafe = (value) => {
+    if (value === null || value === undefined || String(value).trim() === "") return "-";
+    return `${value}.00`;
+  };
+
+  const hasDaySalary = (emp) => {
+    const v = emp?.salaryPerDay;
+    return v !== null && v !== undefined && String(v).trim() !== "";
+  };
+
+  const getSalaryInfo = (emp) => {
+    if (hasDaySalary(emp)) {
+      return {
+        label: "Salary Per Day",
+        value: emp.salaryPerDay,
+      };
+    }
+    return {
+      label: "Salary Per Month",
+      value: emp?.salaryPerMonth,
+    };
+  };
+
   if (loading) {
     return (
       <Container sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -79,6 +111,8 @@ const ViewEmpDetails = () => {
       </Typography>
     );
   }
+
+  const salaryInfo = getSalaryInfo(employee);
 
   return (
     <Container sx={{ mt: 4 }}>
@@ -100,23 +134,32 @@ const ViewEmpDetails = () => {
             <Typography variant="h6" fontWeight={600} gutterBottom>
               {employee.firstName} {employee.lastName}
             </Typography>
+
             <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
               <Typography variant="subtitle2" color={status === "A" ? "green" : "red"}>
                 {status === "A" ? "Active" : "Inactive"}
               </Typography>
               <CircleIcon sx={{ fontSize: 10, color: status === "A" ? "green" : "red" }} />
             </Box>
+
             <Divider sx={{ my: 2 }} />
+
             <CardContent>
               <Grid container spacing={2}>
-                {[{ label: "NIC", value: employee.nic, icon: <PermIdentityIcon /> },
-                { label: "Phone", value: employee.phoneNo, icon: <PhoneIcon /> },
-                { label: "Salary", value: employee.salaryPerDay, icon: <AttachMoneyIcon /> },
-                { label: "OT Rate", value: employee.otValuePerHour, icon: <AccessTimeIcon /> },
-                { label: "Join Date", value: new Date(employee.joinDate).toLocaleDateString(), icon: <CalendarTodayIcon /> },
-                { label: "Created By", value: employee.createdBy, icon: <PersonAddIcon /> },
-                { label: "Created Date", value: new Date(employee.createdDate).toLocaleDateString(), icon: <CalendarTodayIcon /> },
-                { label: "Address", value: employee.address, icon: <HomeIcon /> }].map((field, index) => (
+                {[
+                  { label: "NIC", value: employee.nic ?? "-", icon: <PermIdentityIcon /> },
+                  { label: "Phone", value: employee.phoneNo ?? "-", icon: <PhoneIcon /> },
+                  {
+                    label: salaryInfo.label,
+                    value: formatMoneySafe(salaryInfo.value),
+                    icon: <AttachMoneyIcon />,
+                  },
+                  { label: "OT Rate", value: formatMoneySafe(employee.otValuePerHour), icon: <AccessTimeIcon /> },
+                  { label: "Join Date", value: formatDateSafe(employee.joinDate), icon: <CalendarTodayIcon /> },
+                  { label: "Created By", value: employee.createdBy ?? "-", icon: <PersonAddIcon /> },
+                  { label: "Created Date", value: formatDateSafe(employee.createdDate), icon: <CalendarTodayIcon /> },
+                  { label: "Address", value: employee.address ?? "-", icon: <HomeIcon /> },
+                ].map((field, index) => (
                   <Grid item xs={12} sm={6} key={index}>
                     <Typography fontWeight={500} sx={{ fontSize: "0.8rem", mb: 0.5, textAlign: "left" }}>
                       {field.label}
@@ -127,9 +170,7 @@ const ViewEmpDetails = () => {
                       value={field.value}
                       InputProps={{
                         readOnly: true,
-                        endAdornment: (
-                          <InputAdornment position="end">{field.icon}</InputAdornment>
-                        ),
+                        endAdornment: <InputAdornment position="end">{field.icon}</InputAdornment>,
                         sx: { height: 32, fontSize: "0.85rem" },
                       }}
                       sx={{ bgcolor: "#eaeaea", borderRadius: 1 }}
@@ -137,14 +178,16 @@ const ViewEmpDetails = () => {
                   </Grid>
                 ))}
               </Grid>
+
               <FormControl component="fieldset" sx={{ mt: 2, textAlign: "center" }}>
-                <FormLabel component="legend" sx={{ fontWeight: 600, mb: 1 }}>Change Status
-                <Switch
-                  checked={status === "A"}
-                  onChange={handleStatusToggle}
-                  sx={{ color: "#9C6B3D" }}
-                  disabled={isUpdating}
-                />
+                <FormLabel component="legend" sx={{ fontWeight: 600, mb: 1 }}>
+                  Change Status
+                  <Switch
+                    checked={status === "A"}
+                    onChange={handleStatusToggle}
+                    sx={{ color: "#9C6B3D" }}
+                    disabled={isUpdating}
+                  />
                 </FormLabel>
               </FormControl>
             </CardContent>
@@ -155,7 +198,7 @@ const ViewEmpDetails = () => {
         <Grid item xs={12} display="flex" justifyContent="center">
           <Button
             variant="contained"
-            sx={{ color: "#9C6B3D" , borderRadius: 2}}
+            sx={{ color: "#9C6B3D", borderRadius: 2 }}
             onClick={() => navigate("/employee")}
           >
             Back

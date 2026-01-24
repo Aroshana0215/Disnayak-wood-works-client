@@ -20,13 +20,14 @@ import {
   TableBody,
   Chip,
   CircularProgress,
+  FormHelperText,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import {
-  getEmployeeWorkedDetail,
+  getEmployeeWorkedDetailNotpaid,
   updateDailyDetailsAsPaid,
 } from "../../../services/EmployeeManagementService/EmployeeDailyDetailService";
 import {
@@ -54,8 +55,10 @@ const CreatePayment = () => {
     address: "",
     otValuePerHour: "",
     salaryPerDay: "",
+    salaryPerMonth: "",
     currentLendAmount: "",
   });
+
   const [workDetail, setWorkDetail] = useState([]);
   const [totalPayment, setTotalPayment] = useState("");
   const [totalFullDaySal, setTotalFullDaySal] = useState("");
@@ -77,8 +80,41 @@ const CreatePayment = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ NEW: validation error for Payment Status
+  const [paymentStatusError, setPaymentStatusError] = useState("");
+
   const currentDate = new Date();
   const formattedDate = currentDate.toISOString().slice(0, 10);
+
+  const hasDaySalary = (emp) => {
+    const v = emp?.salaryPerDay;
+    return v !== null && v !== undefined && String(v).trim() !== "";
+  };
+
+  const hasMonthSalary = (emp) => {
+    const v = emp?.salaryPerMonth;
+    return v !== null && v !== undefined && String(v).trim() !== "";
+  };
+
+  const getSalaryMode = (emp) => {
+    if (hasDaySalary(emp)) return "DAY";
+    if (hasMonthSalary(emp)) return "MONTH";
+    return "NONE";
+  };
+
+  // ✅ determine half-day vs full-day using your same rule: < 9 hours = half day
+  const getWorkType = (work) => {
+    if (!work?.isPresent) return "-";
+    if (!work?.inTime || !work?.outTime) return "-";
+
+    const inMins = work.inTime.split(":").reduce((h, m) => h * 60 + +m);
+    const outMins = work.outTime.split(":").reduce((h, m) => h * 60 + +m);
+    if (!Number.isFinite(inMins) || !Number.isFinite(outMins)) return "-";
+    if (outMins <= inMins) return "-";
+
+    const workedHours = (outMins - inMins) / 60;
+    return workedHours < 9 ? "Half Day" : "Full Day";
+  };
 
   useEffect(() => {
     const fetchEmpData = async () => {
@@ -95,23 +131,43 @@ const CreatePayment = () => {
 
   useEffect(() => {
     const calculateActualPayment = () => {
-      const payment = parseFloat(totalHalfDaySal || 0) + parseFloat(totalFullDaySal || 0) + parseFloat(totalOtAmount || 0);
+      const payment =
+        parseFloat(totalHalfDaySal || 0) +
+        parseFloat(totalFullDaySal || 0) +
+        parseFloat(totalOtAmount || 0);
+
       setTotalPayment(payment.toFixed(2));
-      const total = payment - parseFloat(reduceAmount || 0) - parseFloat(totalAdvance || 0);
+
+      const total =
+        payment - parseFloat(reduceAmount || 0) - parseFloat(totalAdvance || 0);
+
       setActualPayment(total.toFixed(2));
     };
     calculateActualPayment();
-  }, [reduceAmount, totalAdvance, totalOtAmount, totalFullDaySal, totalHalfDaySal, toDate]);
+  }, [
+    reduceAmount,
+    totalAdvance,
+    totalOtAmount,
+    totalFullDaySal,
+    totalHalfDaySal,
+    toDate,
+  ]);
 
   const handleDateChange = async (date) => {
     setToDate(date);
     if (date) {
       const formatedFromDate = new Date(fromDate);
       formatedFromDate.setHours(0, 0, 0, 0);
+
       const formatedToDate = new Date(date);
       formatedToDate.setHours(23, 59, 59, 999);
+
       try {
-        const data = await getEmployeeWorkedDetail({ fromDate: formatedFromDate, toDate: formatedToDate, eid });
+        const data = await getEmployeeWorkedDetailNotpaid({
+          fromDate: formatedFromDate,
+          toDate: formatedToDate,
+          eid,
+        });
         setWorkDetail(data);
         calculateTotals(data);
       } catch (error) {
@@ -121,31 +177,62 @@ const CreatePayment = () => {
   };
 
   const calculateTotals = (data) => {
-    let totOt = 0.0, totDays = 0.0, totHalfDays = 0.0, totAdvance = 0.0;
+    const salaryMode = getSalaryMode(empData);
+
+    let totOt = 0.0,
+      totDays = 0.0,
+      totHalfDays = 0.0,
+      totAdvance = 0.0;
+
     data.forEach((item) => {
       if (item.isPresent) {
         let [h, m] = (item.otHours || "0").split(".").map(Number);
         const ot = (h || 0) + (m || 0) / 60;
         totOt += ot;
+
         const inMins = item.inTime.split(":").reduce((h, m) => h * 60 + +m);
         const outMins = item.outTime.split(":").reduce((h, m) => h * 60 + +m);
+
         const workedHours = (outMins - inMins) / 60;
-        if (workedHours < 9) totHalfDays++; else totDays++;
+
+        if (workedHours < 9) totHalfDays++;
+        else totDays++;
+
         totAdvance += parseFloat(item.advancePerDay || 0);
       }
     });
+
     setTotalAdvance(totAdvance.toFixed(2));
     setTotalHalfDay(totHalfDays.toFixed(2));
     setTotalDay(totDays.toFixed(2));
-    setSalaryPerDay(parseFloat(empData.salaryPerDay || 0).toFixed(2));
-    const fullDayPay = parseFloat(empData.salaryPerDay || 0) * totDays;
-    const halfDayPay = (parseFloat(empData.salaryPerDay || 0) / 2) * totHalfDays;
-    setTotalFullDaySal(fullDayPay.toFixed(2));
-    setTotalHalfDaySal(halfDayPay.toFixed(2));
-    setSalaryPerHalfDay((parseFloat(empData.salaryPerDay || 0) / 2).toFixed(2));
+
     setTotalOt(totOt.toFixed(2));
     setOtPerHour(empData.otValuePerHour);
-    setTotalOtAmount((totOt * parseFloat(empData.otValuePerHour || 0)).toFixed(2));
+    setTotalOtAmount(
+      (totOt * parseFloat(empData.otValuePerHour || 0)).toFixed(2)
+    );
+
+    // ✅ MONTH SALARY MODE: no full/half day calculations
+    if (salaryMode === "MONTH") {
+      const monthly = parseFloat(empData.salaryPerMonth || 0);
+
+      setSalaryPerDay("");
+      setSalaryPerHalfDay("");
+      setTotalHalfDaySal("0.00");
+      setTotalFullDaySal(monthly.toFixed(2));
+      return;
+    }
+
+    // ✅ DAY SALARY MODE: keep existing behavior
+    const daySalary = parseFloat(empData.salaryPerDay || 0);
+    setSalaryPerDay(daySalary.toFixed(2));
+
+    const fullDayPay = daySalary * totDays;
+    const halfDayPay = (daySalary / 2) * totHalfDays;
+
+    setTotalFullDaySal(fullDayPay.toFixed(2));
+    setTotalHalfDaySal(halfDayPay.toFixed(2));
+    setSalaryPerHalfDay((daySalary / 2).toFixed(2));
   };
 
   const clearDateFilters = () => {
@@ -153,19 +240,37 @@ const CreatePayment = () => {
     setToDate(null);
   };
 
+  const validateBeforeSubmit = () => {
+    // ✅ paymentStatus mandatory
+    if (!paymentStatus || String(paymentStatus).trim() === "") {
+      setPaymentStatusError("Payment Status is required");
+      toast.error("Please select Payment Status");
+      return false;
+    }
+    setPaymentStatusError("");
+    return true;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    // ✅ validate first
+    if (!validateBeforeSubmit()) return;
+
     setLoading(true);
+
     if (parseFloat(totalPayment) <= 0) {
-      toast.error("Total OT Amount must be greater than 0.");
+      toast.error("Total Payment must be greater than 0.");
       setLoading(false);
       return;
     }
+
     if (!toDate) {
       toast.error("Please select a valid 'To Date' before submitting.");
       setLoading(false);
       return;
     }
+
     const formData = {
       totalPayment,
       totalAdvance,
@@ -181,40 +286,45 @@ const CreatePayment = () => {
       reduceAmount,
       actualPayment,
       status: "A",
-      createdBy: user.displayName,
+      createdBy: user?.displayName || user?.email || user?.uid || "System",
       createdDate: formattedDate,
     };
+
     try {
       const paysheetId = await newPaySheet(formData);
+
       if (paysheetId && empData.currentLendAmount > 0 && reduceAmount > 0) {
         const updatedEmployeeData = {
           currentLendAmount: parseFloat(previous) - parseFloat(reduceAmount),
         };
         await updateemployeeDetails(eid, updatedEmployeeData);
       }
+
       if (paysheetId) {
         const stringResulty = await updateDailyDetailsAsPaid(formData);
-        if(stringResulty){
-          const formData = {
+
+        if (stringResulty) {
+          const expData = {
             date: formattedDate,
             type: "Salaray",
             des: "Employee Salaray",
             amount: actualPayment,
             status: "A",
-            createdBy: user.displayName,
+            createdBy: user?.displayName || user?.email || user?.uid || "System",
             createdDate: formattedDate,
           };
 
-      const ExpensesId = await newExpense(formData);
-      console.log("New Expenses ID:", ExpensesId);
-      if(ExpensesId){
-        toast.success(`${stringResulty}`);
-        setTimeout(() => {
-          setLoading(false);
-          window.location.href = `/employee/payment/${eid}`;
-        }, 1000);
+          const ExpensesId = await newExpense(expData);
+          console.log("New Expenses ID:", ExpensesId);
+
+          if (ExpensesId) {
+            toast.success(`${stringResulty}`);
+            setTimeout(() => {
+              setLoading(false);
+              window.location.href = `/employee/payment/${eid}`;
+            }, 1000);
+          }
         }
-      }
       }
     } catch (error) {
       setLoading(false);
@@ -223,21 +333,14 @@ const CreatePayment = () => {
     }
   };
 
-  const formatDate = (timestamp) => {
-    if (!timestamp || !timestamp.seconds) return "";
-    return new Date(timestamp.seconds * 1000).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-    });
-  };
-
   useEffect(() => {
     const fetchLatestToDate = async () => {
       try {
         if (eid) {
           const latestToDate = await getLatestToDateByEmployee(eid);
-          let newFromDate = latestToDate ? new Date(latestToDate.seconds * 1000) : new Date();
+          let newFromDate = latestToDate
+            ? new Date(latestToDate.seconds * 1000)
+            : new Date();
           if (latestToDate) newFromDate.setDate(newFromDate.getDate() + 1);
           setFromDate(newFromDate);
         }
@@ -247,13 +350,19 @@ const CreatePayment = () => {
     };
     fetchLatestToDate();
   }, [eid]);
-  
+
+  const salaryMode = getSalaryMode(empData);
 
   return (
     <Container>
       <Grid container spacing={2} mt={2}>
         <Grid item xs={12}>
-          <Typography variant="h4" sx={{ color: "#9C6B3D" }} align="center" gutterBottom>
+          <Typography
+            variant="h4"
+            sx={{ color: "#9C6B3D" }}
+            align="center"
+            gutterBottom
+          >
             Pay Sheet
           </Typography>
         </Grid>
@@ -267,13 +376,17 @@ const CreatePayment = () => {
                   label="From Date"
                   value={fromDate}
                   onChange={(date) => setFromDate(date)}
-                  renderInput={(params) => <TextField {...params} size="small" />}
+                  renderInput={(params) => (
+                    <TextField {...params} size="small" />
+                  )}
                 />
                 <DatePicker
                   label="To Date"
                   value={toDate}
                   onChange={handleDateChange}
-                  renderInput={(params) => <TextField {...params} size="small" />}
+                  renderInput={(params) => (
+                    <TextField {...params} size="small" />
+                  )}
                   shouldDisableDate={(date) => fromDate && date < fromDate}
                 />
               </LocalizationProvider>
@@ -297,8 +410,11 @@ const CreatePayment = () => {
               <Typography variant="h6" sx={{ color: "#9C6B3D" }}>
                 Employee Work Details
               </Typography>
-              <IconButton>{isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}</IconButton>
+              <IconButton>
+                {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+              </IconButton>
             </Stack>
+
             <Collapse in={isExpanded}>
               <Table sx={{ mt: 2 }}>
                 <TableHead>
@@ -306,6 +422,7 @@ const CreatePayment = () => {
                     <TableCell align="center">Employee</TableCell>
                     <TableCell align="center">Date</TableCell>
                     <TableCell align="center">Is Present</TableCell>
+                    <TableCell align="center">Type</TableCell>
                     <TableCell align="center">In Time</TableCell>
                     <TableCell align="center">Out Time</TableCell>
                     <TableCell align="center">OT Hours</TableCell>
@@ -313,25 +430,49 @@ const CreatePayment = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {workDetail.map((work, index) => (
-                    <TableRow key={index}>
-                      <TableCell align="center">{work.eid_name}</TableCell>
-                      <TableCell align="center">
-                        {new Date(work.dateTime.seconds * 1000).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={work.isPresent ? "Present" : "Absent"}
-                          color={work.isPresent ? "success" : "error"}
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell align="center">{work.inTime}</TableCell>
-                      <TableCell align="center">{work.outTime}</TableCell>
-                      <TableCell align="center">{work.otHours}</TableCell>
-                      <TableCell align="center">{work.advancePerDay}</TableCell>
-                    </TableRow>
-                  ))}
+                  {workDetail.map((work, index) => {
+                    const type = getWorkType(work);
+                    const isFull = type === "Full Day";
+
+                    return (
+                      <TableRow key={index}>
+                        <TableCell align="center">{work.eid_name}</TableCell>
+                        <TableCell align="center">
+                          {new Date(work.dateTime.seconds * 1000).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                            label={work.isPresent ? "Present" : "Absent"}
+                            color={work.isPresent ? "success" : "error"}
+                            variant="outlined"
+                          />
+                        </TableCell>
+
+                        <TableCell align="center">
+                          {work.isPresent ? (
+                            <Chip
+                              label={type}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                fontWeight: "bold",
+                                borderColor: isFull ? "#66BB6A" : "#FFB74D",
+                                color: isFull ? "#1B5E20" : "#E65100",
+                                backgroundColor: isFull ? "#C8E6C9" : "#FFE0B2",
+                              }}
+                            />
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+
+                        <TableCell align="center">{work.inTime}</TableCell>
+                        <TableCell align="center">{work.outTime}</TableCell>
+                        <TableCell align="center">{work.otHours}</TableCell>
+                        <TableCell align="center">{work.advancePerDay}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </Collapse>
@@ -345,62 +486,161 @@ const CreatePayment = () => {
               🧾 Payment Summary
             </Typography>
 
-            {/* 👇 FORM starts here 👇 */}
             <form onSubmit={handleSubmit}>
               <Grid container spacing={3}>
-                {/* Section 1: Attendance & Salary */}
                 <Grid item xs={12}>
-                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle1"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     📅 Attendance & Salary Info
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
-                  <TextField label="Total Working Days" type="number" value={totalDay} InputProps={{ readOnly: true }} fullWidth />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField label="Salary Per Day" type="number" value={salaryPerDay} InputProps={{ readOnly: true }} fullWidth />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField label="Full Day Salary" type="number" value={totalFullDaySal} InputProps={{ readOnly: true }} fullWidth />
-                </Grid>
+                {/* DAY MODE fields */}
+                {salaryMode === "DAY" && (
+                  <>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="Total Working Days"
+                        type="number"
+                        value={totalDay}
+                        InputProps={{ readOnly: true }}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="Salary Per Day"
+                        type="number"
+                        value={salaryPerDay}
+                        InputProps={{ readOnly: true }}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="Full Day Salary"
+                        type="number"
+                        value={totalFullDaySal}
+                        InputProps={{ readOnly: true }}
+                        fullWidth
+                      />
+                    </Grid>
 
-                <Grid item xs={12} sm={4}>
-                  <TextField label="Half Working Days" type="number" value={totalHalfDay} InputProps={{ readOnly: true }} fullWidth />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField label="Salary Per Half Day" type="number" value={salaryPerHalfDay} InputProps={{ readOnly: true }} fullWidth />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <TextField label="Half Day Salary" type="number" value={totalHalfDaySal} InputProps={{ readOnly: true }} fullWidth />
-                </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="Half Working Days"
+                        type="number"
+                        value={totalHalfDay}
+                        InputProps={{ readOnly: true }}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="Salary Per Half Day"
+                        type="number"
+                        value={salaryPerHalfDay}
+                        InputProps={{ readOnly: true }}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="Half Day Salary"
+                        type="number"
+                        value={totalHalfDaySal}
+                        InputProps={{ readOnly: true }}
+                        fullWidth
+                      />
+                    </Grid>
+                  </>
+                )}
 
-                {/* Section 2: OT Summary */}
+                {/* MONTH MODE fields */}
+                {salaryMode === "MONTH" && (
+                  <>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Salary Per Month"
+                        type="number"
+                        value={String(empData?.salaryPerMonth ?? "")}
+                        InputProps={{ readOnly: true }}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Monthly Salary (Full)"
+                        type="number"
+                        value={totalFullDaySal}
+                        InputProps={{ readOnly: true }}
+                        fullWidth
+                      />
+                    </Grid>
+                  </>
+                )}
+
+                {/* OT Summary */}
                 <Grid item xs={12}>
-                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle1"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     ⏱️ Overtime Calculation
                   </Typography>
                 </Grid>
 
                 <Grid item xs={12} sm={4}>
-                  <TextField label="Total OT Hours" type="number" value={totalOt} InputProps={{ readOnly: true }} fullWidth />
+                  <TextField
+                    label="Total OT Hours"
+                    type="number"
+                    value={totalOt}
+                    InputProps={{ readOnly: true }}
+                    fullWidth
+                  />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <TextField label="Rate per OT Hour" type="number" value={otPerHour} InputProps={{ readOnly: true }} fullWidth />
+                  <TextField
+                    label="Rate per OT Hour"
+                    type="number"
+                    value={otPerHour}
+                    InputProps={{ readOnly: true }}
+                    fullWidth
+                  />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <TextField label="OT Amount" type="number" value={totalOtAmount} InputProps={{ readOnly: true }} fullWidth />
+                  <TextField
+                    label="OT Amount"
+                    type="number"
+                    value={totalOtAmount}
+                    InputProps={{ readOnly: true }}
+                    fullWidth
+                  />
                 </Grid>
 
-                {/* Section 3: Advance & Deductions */}
+                {/* Advance & Deductions */}
                 <Grid item xs={12}>
-                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle1"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     💸 Advance & Deductions
                   </Typography>
                 </Grid>
 
                 <Grid item xs={12} sm={6}>
-                  <TextField label="Total Advance Taken" type="number" value={totalAdvance} InputProps={{ readOnly: true }} fullWidth />
+                  <TextField
+                    label="Total Advance Taken"
+                    type="number"
+                    value={totalAdvance}
+                    InputProps={{ readOnly: true }}
+                    fullWidth
+                  />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
@@ -413,9 +653,13 @@ const CreatePayment = () => {
                   />
                 </Grid>
 
-                {/* Section 4: Final Calculation */}
+                {/* Final */}
                 <Grid item xs={12}>
-                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle1"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     ✅ Final Payment
                   </Typography>
                 </Grid>
@@ -437,19 +681,32 @@ const CreatePayment = () => {
                     value={actualPayment}
                     InputProps={{ readOnly: true }}
                     fullWidth
-                    InputLabelProps={{ style: { fontWeight: "bold", color: "#2e7d32" } }}
+                    InputLabelProps={{
+                      style: { fontWeight: "bold", color: "#2e7d32" },
+                    }}
                     sx={{ bgcolor: "#f1f8e9" }}
                   />
                 </Grid>
 
+                {/* ✅ Payment Status (MANDATORY) */}
                 <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth error={!!paymentStatusError}>
                     <InputLabel>Payment Status</InputLabel>
-                    <Select value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} label="Payment Status">
+                    <Select
+                      value={paymentStatus}
+                      onChange={(e) => {
+                        setPaymentStatus(e.target.value);
+                        if (e.target.value) setPaymentStatusError("");
+                      }}
+                      label="Payment Status"
+                    >
                       <MenuItem value="Pending">Pending</MenuItem>
                       <MenuItem value="Completed">Completed</MenuItem>
                       <MenuItem value="Cancelled">Cancelled</MenuItem>
                     </Select>
+                    {paymentStatusError && (
+                      <FormHelperText>{paymentStatusError}</FormHelperText>
+                    )}
                   </FormControl>
                 </Grid>
 
@@ -457,7 +714,7 @@ const CreatePayment = () => {
                   <Button
                     type="submit"
                     variant="contained"
-                    sx={{ color: "#9C6B3D" , mt: 2}}
+                    sx={{ color: "#9C6B3D", mt: 2 }}
                     disabled={loading}
                     fullWidth
                     size="large"
@@ -467,13 +724,11 @@ const CreatePayment = () => {
                 </Grid>
               </Grid>
             </form>
-            {/* 👆 FORM ends here 👆 */}
           </Paper>
         </Grid>
       </Grid>
     </Container>
   );
-
 };
 
 export default CreatePayment;

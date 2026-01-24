@@ -19,7 +19,10 @@ import {
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import { DataGrid } from "@mui/x-data-grid";
-import { getAllemployeeDailyDetails, updateemployeeDailyDetails } from "../../../services/EmployeeManagementService/EmployeeDailyDetailService";
+import {
+  getAllemployeeDailyDetails,
+  updateemployeeDailyDetails,
+} from "../../../services/EmployeeManagementService/EmployeeDailyDetailService";
 import { getAllActiveEmployeeDetails } from "../../../services/EmployeeManagementService/EmployeeDetailService";
 import Loading from "../../../Components/Progress/Loading";
 import ErrorAlert from "../../../Components/Alert/ErrorAlert";
@@ -57,22 +60,36 @@ const DailyDetailList = () => {
     return localDate.toISOString().split("T")[0];
   };
 
+  const getWorkType = (inTime, outTime) => {
+    if (!inTime || !outTime) return "-";
+
+    const inDateTime = new Date(`1970-01-01T${inTime}`);
+    const outDateTime = new Date(`1970-01-01T${outTime}`);
+
+    if (isNaN(inDateTime.getTime()) || isNaN(outDateTime.getTime())) return "-";
+    if (outDateTime <= inDateTime) return "-";
+
+    const totalMinutes = (outDateTime - inDateTime) / (1000 * 60);
+
+    // same rule you use in CreatePayment: < 9 hours = half day, else full day
+    const workedHours = totalMinutes / 60;
+    return workedHours < 9 ? "Half Day" : "Full Day";
+  };
 
   const calculateOTHours = (inTime, outTime) => {
     if (!inTime || !outTime) return "0.00";
-  
+
     const inDateTime = new Date(`1970-01-01T${inTime}`);
     const outDateTime = new Date(`1970-01-01T${outTime}`);
-  
+
     if (outDateTime <= inDateTime) return "0.00";
-  
+
     const totalMinutes = (outDateTime - inDateTime) / (1000 * 60);
-    const totalHours = totalMinutes / 60;
-  
+
     const noon = new Date("1970-01-01T12:00:00");
     const afterNoonStart = new Date("1970-01-01T12:01:00");
     const afternoonEnd = new Date("1970-01-01T16:59:00");
-  
+
     // ✅ Case 1: Full day completed
     if (totalMinutes >= 540) {
       const otMinutes = totalMinutes - 540;
@@ -80,20 +97,16 @@ const DailyDetailList = () => {
       const otMinutesPart = Math.round(otMinutes % 60);
       return `${otHours}.${otMinutesPart.toString().padStart(2, "0")}`;
     }
-  
+
     // ✅ Case 2: In before 12PM and Out between 12:01PM - 4:59PM (half day logic)
-    if (
-      inDateTime < noon &&
-      outDateTime >= afterNoonStart &&
-      outDateTime <= afternoonEnd
-    ) {
+    if (inDateTime < noon && outDateTime >= afterNoonStart && outDateTime <= afternoonEnd) {
       const otMinutes = totalMinutes - 240;
       if (otMinutes <= 0) return "0.00";
       const otHours = Math.floor(otMinutes / 60);
       const otMinutesPart = Math.round(otMinutes % 60);
       return `${otHours}.${otMinutesPart.toString().padStart(2, "0")}`;
     }
-  
+
     // ✅ Case 3: In after 12PM (afternoon-only shift, still eligible for half-day + OT)
     if (inDateTime >= noon) {
       const otMinutes = totalMinutes - 240;
@@ -102,11 +115,9 @@ const DailyDetailList = () => {
       const otMinutesPart = Math.round(otMinutes % 60);
       return `${otHours}.${otMinutesPart.toString().padStart(2, "0")}`;
     }
-  
-    // ❌ Default: Not eligible for OT
+
     return "0.00";
   };
-  
 
   const handleUpdateSave = async () => {
     try {
@@ -118,6 +129,7 @@ const DailyDetailList = () => {
       };
       await updateemployeeDailyDetails(selectedRow.id, updateData);
       setOpenDialog(false);
+
       const updatedDetails = details.map((item) =>
         item.id === selectedRow.id ? { ...item, ...updateData } : item
       );
@@ -149,6 +161,35 @@ const DailyDetailList = () => {
         />
       ),
     },
+
+    // ✅ NEW COLUMN: Half Day / Full Day (only when present)
+    {
+      field: "workType",
+      headerName: "Type",
+      width: 120,
+      sortable: false,
+      renderCell: ({ row }) => {
+        if (!row.isPresent) return "-";
+
+        const type = getWorkType(row.inTime, row.outTime);
+        const isFull = type === "Full Day";
+
+        return (
+          <Chip
+            label={type}
+            size="small"
+            variant="outlined"
+            sx={{
+              fontWeight: "bold",
+              borderColor: isFull ? "#66BB6A" : "#FFB74D",
+              color: isFull ? "#1B5E20" : "#E65100",
+              backgroundColor: isFull ? "#C8E6C9" : "#FFE0B2",
+            }}
+          />
+        );
+      },
+    },
+
     { field: "inTime", headerName: "In Time", width: 120 },
     { field: "outTime", headerName: "Out Time", width: 120 },
     { field: "otHours", headerName: "OT Hours", width: 120 },
@@ -266,22 +307,27 @@ const DailyDetailList = () => {
 
   const handleSearch = () => {
     let filteredData = details;
+
     if (selectedEmployee) {
       filteredData = filteredData.filter((detail) => detail.eid_name === selectedEmployee);
     }
+
     if (fromDate && toDate) {
       const fromDateFormatted = formatDate(fromDate);
       const toDateFormatted = formatDate(toDate);
+
       filteredData = filteredData.filter((detail) => {
         const detailDate = formatDate(new Date(detail.dateTime.seconds * 1000));
         return detailDate >= fromDateFormatted && detailDate <= toDateFormatted;
       });
     }
+
     setFilteredDetails(filteredData);
   };
 
   useEffect(() => {
     handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmployee, fromDate, toDate]);
 
   const clearDateFilters = () => {
@@ -295,12 +341,12 @@ const DailyDetailList = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Grid container spacing={2} p={2}>
-        {/* Top Toolbar and Filters */}
         <Grid item xs={12}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="h6" fontWeight="bold" sx={{ color: "#9C6B3D" }}>
               Daily Employee Details
             </Typography>
+
             <IconButton
               sx={{
                 width: "45px",
@@ -313,6 +359,7 @@ const DailyDetailList = () => {
             >
               <CalendarMonthIcon fontSize="medium" sx={{ color: "#9C6B3D" }} />
             </IconButton>
+
             <Button
               variant="contained"
               startIcon={<AddCircleOutlineOutlinedIcon />}
@@ -388,9 +435,7 @@ const DailyDetailList = () => {
             rows={filteredDetails}
             columns={columns}
             initialState={{
-              pagination: {
-                paginationModel: { pageSize: 8 },
-              },
+              pagination: { paginationModel: { pageSize: 8 } },
             }}
             pageSizeOptions={[8]}
             disableRowSelectionOnClick
@@ -399,9 +444,7 @@ const DailyDetailList = () => {
               if (index > 0) {
                 const currentDate = formatDate(new Date(filteredDetails[index].dateTime.seconds * 1000));
                 const previousDate = formatDate(new Date(filteredDetails[index - 1].dateTime.seconds * 1000));
-                if (currentDate !== previousDate) {
-                  return "different-date";
-                }
+                if (currentDate !== previousDate) return "different-date";
               }
               return "";
             }}
@@ -409,14 +452,18 @@ const DailyDetailList = () => {
         </Grid>
       </Grid>
 
-      {/* Update Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
         <DialogTitle>Update Daily Record</DialogTitle>
         <DialogContent dividers>
           {selectedRow && (
             <Box display="flex" flexDirection="column" gap={2} mt={1}>
-              <Typography><strong>Date:</strong> {formatDate(new Date(selectedRow.dateTime.seconds * 1000))}</Typography>
-              <Typography><strong>Employee:</strong> {selectedRow.eid_name}</Typography>
+              <Typography>
+                <strong>Date:</strong> {formatDate(new Date(selectedRow.dateTime.seconds * 1000))}
+              </Typography>
+              <Typography>
+                <strong>Employee:</strong> {selectedRow.eid_name}
+              </Typography>
+
               <TextField
                 label="In Time"
                 value={inTime}
@@ -435,12 +482,17 @@ const DailyDetailList = () => {
                 }}
                 fullWidth
               />
+
+              <TextField label="OT Hours" value={otHours} disabled fullWidth />
+
+              {/* ✅ NEW: Show Half Day / Full Day in dialog (when present) */}
               <TextField
-                label="OT Hours"
-                value={otHours}
+                label="Work Type"
+                value={selectedRow.isPresent ? getWorkType(inTime, outTime) : "-"}
                 disabled
                 fullWidth
               />
+
               <TextField
                 label="Advance"
                 value={advancePerDay}
@@ -458,7 +510,6 @@ const DailyDetailList = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={3000}

@@ -81,6 +81,42 @@ export const getEmployeeWorkedDetail = async (formData) => {
 };
 
 
+export const getEmployeeWorkedDetailNotpaid = async (formData) => {
+  console.log("Fetching Employee Work Details for:", formData);
+
+  try {
+    const fromDateTimestamp = Timestamp.fromDate(new Date(formData.fromDate));
+
+    // ✅ Ensure `toDate` includes the entire day (until 23:59:59)
+    const toDateObject = new Date(formData.toDate);
+    toDateObject.setHours(23, 59, 59, 999);
+    const toDateTimestamp = Timestamp.fromDate(toDateObject);
+
+    const q = query(
+      collection(db, "employeeDailyDetails"),
+      where("eid_fk", "==", formData.eid),
+      where("status", "==", "A"),
+      where("isPaid", "==", false), // ✅ NEW FILTER
+      where("dateTime", ">=", fromDateTimestamp),
+      where("dateTime", "<=", toDateTimestamp)
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    const employeeWorkList = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    console.log("Fetched Employee Work List:", employeeWorkList);
+    return employeeWorkList;
+  } catch (error) {
+    console.error("Error getting employee work details:", error.message);
+    throw error;
+  }
+};
+
+
 
 export const getAllemployeeDailyDetails = async () => {
   try {
