@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { getAllActiveStockDetails } from "../../../services/InventoryManagementService/StockSummaryManagementService"; 
-import { getCategoryById, getAllCategories, getCategoryIdBytimberType } from "../../../services/PriceCardService";
-import { getInventoryDetailsById } from "../../../services/InventoryManagementService/StockManagementService";
-import { getbillDetailsById } from "../../../services/BillAndOrderService/BilllManagemntService"; 
-import { Grid, Stack, Typography, Button,  TextField, MenuItem,InputAdornment } from "@mui/material";
+import React, { useState, useEffect, useMemo } from "react";
+import { getAllActiveStockDetails } from "../../../services/InventoryManagementService/StockSummaryManagementService";
+import { getAllCategories } from "../../../services/PriceCardService";
+import { getAllActiveTreeType } from "../../../services/SettingManagementService/TreeTypeService";
+import { getAllActiveTimberNature } from "../../../services/SettingManagementService/TimberNatureService";
+import {
+  Grid,
+  Stack,
+  Typography,
+  Button,
+  TextField,
+  MenuItem,
+  InputAdornment,
+} from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import Loading from "../../../Components/Progress/Loading";
 import ErrorAlert from "../../../Components/Alert/ErrorAlert";
@@ -13,15 +21,22 @@ import SearchIcon from "@mui/icons-material/Search";
 
 const ActiveStockList = () => {
   const [summaryData, setSummaryData] = useState([]);
+  const [categories, setCategories] = useState([]); // price-card categories
+  const [filteredData, setFilteredData] = useState([]);
+
+  const [treeTypes, setTreeTypes] = useState([]); // ✅ same as PriceCardList
+  const [timberNatures, setTimberNatures] = useState([]); // ✅ same as PriceCardList
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Filters (same as PriceCardList)
   const [timberTypeQuery, setTimberTypeQuery] = useState("");
   const [timberNatuerQuery, setTimberNatuerQuery] = useState("");
   const [dimensionsQuery, setDimensionsQuery] = useState("");
   const [categoryIdQuery, setCategoryIdQuery] = useState("");
   const [generalQuery, setGeneralQuery] = useState("");
-  const [filteredCategories, setFilteredCategories] = useState([]);
-  const [filteredCategoryId, setFilteredCategoryId] = useState([]);
+
   const [dimensionOptions, setDimensionOptions] = useState([]);
 
   const columns = [
@@ -30,9 +45,7 @@ const ActiveStockList = () => {
       field: "lengthRange",
       headerName: "Length Range",
       width: 130,
-      renderCell: ({ row }) => {
-        return `${row.minlength} - ${row.maxlength}`;
-      },
+      renderCell: ({ row }) => `${row.minlength} - ${row.maxlength}`,
     },
     { field: "timberType", headerName: "Type", width: 120 },
     { field: "timberNature", headerName: "Nature", width: 150 },
@@ -40,58 +53,77 @@ const ActiveStockList = () => {
       field: "dimensions",
       headerName: "Dimensions",
       width: 130,
-      renderCell: ({ row }) => {
-        return `${row.areaLength} x ${row.areaWidth}`;
-      },
+      renderCell: ({ row }) => `${row.areaLength} x ${row.areaWidth}`,
     },
     { field: "length", headerName: "Length", width: 150 },
     {
       field: "totalPieces",
       headerName: "Total Pieces",
       width: 120,
-      renderCell: ({ value }) => {
-        return (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-          <Typography variant="body2" style={{ fontWeight: 'bold' }}>
+      renderCell: ({ value }) => (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+          <Typography variant="body2" style={{ fontWeight: "bold" }}>
             {value}
           </Typography>
         </div>
-        );
-      },
+      ),
     },
     { field: "toBeCutAmount", headerName: "Order Amount", width: 150 },
     { field: "createdBy", headerName: "Created By", width: 120 },
   ];
 
+  // ✅ Fetch ALL data ONCE (stock + categories + dropdown data)
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAll = async () => {
       try {
-        let summaryData = await getAllActiveStockDetails();
-        console.log("summaryData:",summaryData);
+        const [stockRes, categoryData, treeTypeRes, timberNatureRes] = await Promise.all([
+          getAllActiveStockDetails(),
+          getAllCategories(),
+          getAllActiveTreeType(),
+          getAllActiveTimberNature(),
+        ]);
 
-        if (Array.isArray(summaryData)) {
-          setSummaryData(summaryData);
-          setLoading(false);
-        } else {
-          throw new Error("Invalid data format received from API");
-        }
-      } catch (error) {
-        setError(error.message);
+        if (!Array.isArray(stockRes)) throw new Error("Invalid stock data format");
+        if (!Array.isArray(categoryData)) throw new Error("Invalid data format received from API");
+        if (!Array.isArray(treeTypeRes)) throw new Error("Invalid tree type data format received from API");
+        if (!Array.isArray(timberNatureRes)) throw new Error("Invalid timber nature data format received from API");
+
+        setSummaryData(stockRes);
+        setCategories(categoryData);
+        setTreeTypes(treeTypeRes);
+        setTimberNatures(timberNatureRes);
+
+        setFilteredData(stockRes);
+        setLoading(false);
+      } catch (err) {
+        setError(err?.message || "Something went wrong");
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchAll();
   }, []);
 
-
+  // ✅ Dimension dropdown options (same approach)
   const updateDimensionOptions = (nature) => {
     if (nature === "Planks") {
       setDimensionOptions([
+        "0.1 x 5",
+        "0.2 x 5",
         "0.3 x 5",
+        "0.4 x 5",
+        "0.5 x 5",
         "0.6 x 5",
-        "0.9 x 5",
-        "0 x 0"
+        "0.7 x 5",
+        "0.8 x 5",
+        "0.1 x 6",
+        "0.2 x 6",
+        "0.3 x 6",
+        "0.4 x 6",
+        "0.5 x 6",
+        "0.6 x 6",
+        "0.7 x 6",
+        "0.8 x 6",
       ]);
     } else if (nature === "Blocks") {
       setDimensionOptions([
@@ -100,212 +132,248 @@ const ActiveStockList = () => {
         "2 x 5",
         "2 x 6",
         "3 x 2",
-        "3 x 4"
+        "3 x 3",
+        "3 x 4",
+        "3 x 5",
+        "3 x 6",
+        "4 x 3",
+        "4 x 4",
+        "4 x 5",
+        "4 x 6",
       ]);
+    } else if (nature === "Dust") {
+      setDimensionOptions(["0 x 0"]);
     } else {
       setDimensionOptions([]);
     }
   };
 
-
-  const handleSearch = () => {
-    let filteredData = summaryData;
-
-    if (timberTypeQuery) {
-      const lowercasedTimberTypeQuery = timberTypeQuery.toLowerCase();
-      filteredData = filteredData.filter((category) =>
-        category.timberType.toLowerCase().includes(lowercasedTimberTypeQuery)
-      );
-    }
-
-
-    if (timberNatuerQuery) {
-      const lowercasedTimberNatuerQuery = timberNatuerQuery.toLowerCase();
-      console.log("timberNatuerQuery:", timberNatuerQuery);
-      updateDimensionOptions(timberNatuerQuery);
-      filteredData = filteredData.filter((category) =>
-        category.timberNature.toLowerCase().includes(lowercasedTimberNatuerQuery)
-      );
-    }
-
-
-    if (dimensionsQuery) {
-      const lowercasedDimensionsQuery = dimensionsQuery.toLowerCase();
-      console.log("lowercasedDimensionsQuery:", lowercasedDimensionsQuery);
-
-      const [queryLength, queryWidth] = lowercasedDimensionsQuery.split('x').map(part => part.trim());
-
-      filteredData = filteredData.filter((category) =>
-      category.areaLength.toString().toLowerCase().includes(queryLength) &&
-      category.areaWidth.toString().toLowerCase().includes(queryWidth)
-      );
-    }
-
-    if (generalQuery) {
-      const lowercasedGeneralQuery = generalQuery.toLowerCase();
-      filteredData = filteredData.filter((category) =>
-        Object.values(category).some((value) =>
-          String(value).toLowerCase().includes(lowercasedGeneralQuery)
-        )
-      );
-    }
-
-    setFilteredCategories(filteredData);
+  // ✅ Parse "2 x 4" -> [2,4] (numeric safe for swapped matching)
+  const parseDim = (dimStr) => {
+    const [a, b] = String(dimStr)
+      .toLowerCase()
+      .split("x")
+      .map((p) => p.trim());
+    const n1 = Number(a);
+    const n2 = Number(b);
+    return [n1, n2];
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if(timberTypeQuery){
-          console.log("In categoryIdQuery:", categoryIdQuery);
-          let filteredCategoryData = await getCategoryIdBytimberType(timberTypeQuery);
-          setFilteredCategoryId(filteredCategoryData);
-        }else{
-          let filteredCategoryData = await getAllCategories();
-          if(filteredCategoryData){
-            setFilteredCategoryId(filteredCategoryData);
-          }
-        }
-      } catch (error) {
-        setError(error.message);
-      }
-    };
-    fetchData();
-  }, [timberTypeQuery, filteredCategories]);
+  // ✅ Dimensions matching for categories (2x4 == 4x2)
+  const matchCategoryDimensions = (cat, selectedDim) => {
+    const [q1, q2] = parseDim(selectedDim);
+    const c1 = Number(cat.areaLength);
+    const c2 = Number(cat.areaWidth);
+
+    if ([q1, q2, c1, c2].some((n) => Number.isNaN(n))) return false;
+
+    const normal = c1 === q1 && c2 === q2;
+    const swapped = c1 === q2 && c2 === q1;
+    return normal || swapped;
+  };
+
+  // ✅ MAIN FILTERING (like PriceCardList but works correctly with dropdown values)
+  const handleSearch = () => {
+    let matchedCategories = categories;
+
+    // Timber Type: exact match (dropdown value)
+    if (timberTypeQuery) {
+      const q = timberTypeQuery.toLowerCase().trim();
+      matchedCategories = matchedCategories.filter(
+        (c) => String(c.timberType ?? "").toLowerCase().trim() === q
+      );
+    }
+
+    // Timber Nature: exact match (dropdown value)
+    if (timberNatuerQuery) {
+      const q = timberNatuerQuery.toLowerCase().trim();
+      matchedCategories = matchedCategories.filter(
+        (c) => String(c.timberNature ?? "").toLowerCase().trim() === q
+      );
+    }
+
+    // Dimensions: supports swapped
+    if (dimensionsQuery) {
+      matchedCategories = matchedCategories.filter((c) =>
+        matchCategoryDimensions(c, dimensionsQuery)
+      );
+    }
+
+    // Category ID AFTER dimensions (same order)
+    if (categoryIdQuery) {
+      matchedCategories = matchedCategories.filter(
+        (c) => String(c.categoryId) === String(categoryIdQuery)
+      );
+    }
+
+    const matchedCategoryIds = new Set(
+      matchedCategories.map((c) => String(c.categoryId))
+    );
+
+    // Filter active stock rows by matched category IDs
+    let data = summaryData.filter((r) =>
+      matchedCategoryIds.has(String(r.categoryId_fk))
+    );
+
+    // General search on stock rows
+    if (generalQuery) {
+      const q = generalQuery.toLowerCase();
+      data = data.filter((r) =>
+        Object.values(r).some((val) => String(val).toLowerCase().includes(q))
+      );
+    }
+
+    setFilteredData(data);
+  };
 
   useEffect(() => {
     handleSearch();
-  }, [generalQuery, timberTypeQuery, timberNatuerQuery, dimensionsQuery]);
-
+  }, [
+    timberTypeQuery,
+    timberNatuerQuery,
+    dimensionsQuery,
+    categoryIdQuery,
+    generalQuery,
+    summaryData,
+    categories,
+  ]);
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+    if (e.key === "Enter") handleSearch();
   };
 
-  if (loading) {
-    return <Loading />;
-  }
+  // unique category ids for dropdown
+  const uniqueCategoryIds = useMemo(() => {
+    const ids = categories.map((c) => c.categoryId).filter(Boolean);
+    return [...new Set(ids)];
+  }, [categories]);
 
-  if (error) {
-    return <ErrorAlert error={error} />;
-  }
+  if (loading) return <Loading />;
+  if (error) return <ErrorAlert error={error} />;
 
   return (
     <>
       <Grid container>
         <Grid item xs={12} p={2}>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-          >
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="h6" fontWeight="bold" sx={{ color: "#9C6B3D" }}>
               Stock Summary
             </Typography>
-            <Stack direction={"row"} spacing={2}>
-            <Button
-              variant="contained"
-              component={Link}
-              to={"/switch-category"}
-            >
-              Switch Category
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddCircleOutlineOutlinedIcon />}
-              component={Link}
-              to={"/stock"}
-            >
-              New
-            </Button>
+
+            <Stack direction="row" spacing={2}>
+              <Button variant="contained" component={Link} to={"/switch-category"}>
+                Switch Category
+              </Button>
+
+              <Button
+                variant="contained"
+                startIcon={<AddCircleOutlineOutlinedIcon />}
+                component={Link}
+                to={"/stock"}
+              >
+                New
+              </Button>
             </Stack>
           </Stack>
         </Grid>
+
         <Grid item xs={12} p={2}>
           <Stack
             p={2}
             direction="row"
             alignItems="center"
             justifyContent="space-between"
-            sx={{
-              bgcolor: "background.default",
-              borderRadius: 1,
-            }}
+            sx={{ bgcolor: "background.default", borderRadius: 1 }}
           >
-                        <Stack direction="row" spacing={2}>
-            <TextField
-              select
-              size="small"
-              value={timberTypeQuery}
-              onChange={(e) => setTimberTypeQuery(e.target.value)}
-              label="Timber Type"
-              sx={{
-                minWidth: "180px",
-              }}
-            >
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-              <MenuItem value="Sapu">Sapu</MenuItem>
-              <MenuItem value="Grandis">Grandis</MenuItem>
-              <MenuItem value="Thekka">Thekka</MenuItem>
-              <MenuItem value="Micro">Micro</MenuItem>
-              <MenuItem value="Amba">Amba</MenuItem>
-              <MenuItem value="Kos">Kos</MenuItem>
-              <MenuItem value="Maara">Maara</MenuItem>
-              <MenuItem value="LunuMidella">LunuMidella</MenuItem>
-            </TextField>
-
-            <TextField
+            <Stack direction="row" spacing={2}>
+              {/* ✅ Timber Type (API - same as PriceCardList) */}
+              <TextField
                 select
                 size="small"
-                value={timberNatuerQuery}
-                onChange={(e) => {
-                  setTimberNatuerQuery(e.target.value);
-                  updateDimensionOptions(e.target.value);
-                }}
-                label="Timber Nature"
-                sx={{
-                  minWidth: "180px",
-                }}
+                value={timberTypeQuery}
+                onChange={(e) => setTimberTypeQuery(e.target.value)}
+                label="Timber Type"
+                sx={{ minWidth: "180px" }}
               >
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
-                <MenuItem value="Blocks">Blocks</MenuItem>
-                <MenuItem value="Planks">Planks</MenuItem>
-                <MenuItem value="Dust">Dust</MenuItem>
+                {treeTypes.map((t) => (
+                  <MenuItem key={t.typeId ?? t.id} value={t.typeName}>
+                    {t.typeName}
+                  </MenuItem>
+                ))}
               </TextField>
 
-            <TextField
-              select
-              size="small"
-              value={dimensionsQuery}
-              onChange={(e) => setDimensionsQuery(e.target.value)}
-              label="Dimensions"
-              sx={{
-                minWidth: "180px",
-              }}
-            >
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-              <MenuItem value="2 x 2">2 x 2</MenuItem>
-              <MenuItem value="2 x 4">2 x 4</MenuItem>
-              <MenuItem value="2 x 5">2 x 5</MenuItem>
-              <MenuItem value="2 x 6">2 x 6</MenuItem>
-              <MenuItem value="3 x 2">3 x 2</MenuItem>
-              <MenuItem value="3 x 4">3 x 4</MenuItem>
-              
-              <MenuItem value="0.3 x 5">0.3 x 5</MenuItem>
-              <MenuItem value="0.6 x 5">0.6 x 5</MenuItem>
-              <MenuItem value="0.9 x 5">0.9 x 5</MenuItem>
+              {/* ✅ Timber Nature (API - same as PriceCardList) */}
+              <TextField
+                select
+                size="small"
+                value={timberNatuerQuery}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setTimberNatuerQuery(val);
+                  updateDimensionOptions(val);
 
-              <MenuItem value="0 x 0">0 x 0</MenuItem>
-            </TextField>
+                  if (!val) {
+                    setDimensionsQuery("");
+                    setDimensionOptions([]);
+                  }
+                }}
+                label="Timber Nature"
+                sx={{ minWidth: "180px" }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {timberNatures.map((n) => (
+                  <MenuItem key={n.natureId ?? n.id} value={n.natureName}>
+                    {n.natureName}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              {/* Dimensions */}
+              <TextField
+                select
+                size="small"
+                value={dimensionsQuery}
+                onChange={(e) => setDimensionsQuery(e.target.value)}
+                label="Dimensions"
+                sx={{ minWidth: "180px" }}
+                disabled={!timberNatuerQuery}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {dimensionOptions.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              {/* Category ID */}
+              <TextField
+                select
+                size="small"
+                value={categoryIdQuery}
+                onChange={(e) => setCategoryIdQuery(e.target.value)}
+                label="Category ID"
+                sx={{ minWidth: "180px" }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {uniqueCategoryIds.map((id) => (
+                  <MenuItem key={id} value={id}>
+                    {id}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Stack>
+
+            {/* General search */}
             <TextField
               size="small"
               InputProps={{
@@ -323,19 +391,14 @@ const ActiveStockList = () => {
             />
           </Stack>
         </Grid>
+
         <Grid item xs={12} p={2}>
           <DataGrid
-            sx={{
-              bgcolor: "background.default",
-            }}
-            rows={filteredCategories.length === 0 ? summaryData : filteredCategories}
+            sx={{ bgcolor: "background.default" }}
+            rows={filteredData}
             columns={columns}
             initialState={{
-              pagination: {
-                paginationModel: {
-                  pageSize: 8,
-                },
-              },
+              pagination: { paginationModel: { pageSize: 8 } },
             }}
             pageSizeOptions={[8]}
             disableRowSelectionOnClick
