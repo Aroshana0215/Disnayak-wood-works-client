@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { getAllCategories } from '../../services/PriceCardService';
-import { getAllActiveTreeType } from '../../services/SettingManagementService/TreeTypeService';
-import { getAllActiveTimberNature } from '../../services/SettingManagementService/TimberNatureService'; // Import Timber Nature API
+import React, { useState, useEffect } from "react";
+import { getAllCategories } from "../../services/PriceCardService";
+import { getAllActiveTreeType } from "../../services/SettingManagementService/TreeTypeService";
+import { getAllActiveTimberNature } from "../../services/SettingManagementService/TimberNatureService";
 import {
   Stack,
   Typography,
@@ -23,14 +23,18 @@ const PriceCardList = () => {
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Filters
   const [timberTypeQuery, setTimberTypeQuery] = useState("");
   const [timberNatuerQuery, setTimberNatuerQuery] = useState("");
   const [dimensionsQuery, setDimensionsQuery] = useState("");
+  const [categoryIdQuery, setCategoryIdQuery] = useState("");
   const [generalQuery, setGeneralQuery] = useState("");
+
+  // Dropdown data
   const [dimensionOptions, setDimensionOptions] = useState([]);
   const [treeTypes, setTreeTypes] = useState([]);
-  const [timberNatures, setTimberNatures] = useState([]); // New state to hold timber natures
-  console.log("dimensionOptions:",dimensionOptions);
+  const [timberNatures, setTimberNatures] = useState([]);
 
   const columns = [
     { field: "categoryId", headerName: "Id", width: 130 },
@@ -40,25 +44,19 @@ const PriceCardList = () => {
       field: "dimensions",
       headerName: "Dimensions",
       width: 130,
-      renderCell: ({ row }) => {
-        return `${row.areaLength} x ${row.areaWidth}`;
-      },
+      renderCell: ({ row }) => `${row.areaLength} x ${row.areaWidth}`,
     },
     {
       field: "lengthRange",
       headerName: "Length",
       width: 130,
-      renderCell: ({ row }) => {
-        return `${row.minlength} - ${row.maxlength}`;
-      },
+      renderCell: ({ row }) => `${row.minlength} - ${row.maxlength}`,
     },
     {
       field: "unitPrice",
       headerName: "Unit Price (RS:)",
       width: 130,
-      renderCell: ({ row }) => {
-        return `${row.unitPrice}.00`;
-      },
+      renderCell: ({ row }) => `${row.unitPrice}.00`,
     },
     { field: "description", headerName: "Description", width: 160 },
     { field: "createdBy", headerName: "Created By", width: 125 },
@@ -67,50 +65,42 @@ const PriceCardList = () => {
       field: "actions",
       headerName: "Actions",
       width: 130,
-      renderCell: ({ row }) => {
-        return (
-          <Link to={`/price/update/${row.id}`}>
-            <Button variant="contained" size="small">
-              Update
-            </Button>
-          </Link>
-        );
-      },
+      renderCell: ({ row }) => (
+        <Link to={`/price/update/${row.id}`}>
+          <Button variant="contained" size="small">
+            Update
+          </Button>
+        </Link>
+      ),
     },
   ];
 
-  // Fetch categories, tree types, and timber natures on component mount
+  // ✅ Fetch all data ONCE (do not put filter states in dependencies)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch categories
         const categoryData = await getAllCategories();
-        if (Array.isArray(categoryData)) {
-          setCategories(categoryData);
-          setFilteredCategories(categoryData);
-        } else {
+        if (!Array.isArray(categoryData)) {
           throw new Error("Invalid data format received from API");
         }
+        setCategories(categoryData);
+        setFilteredCategories(categoryData);
 
-        // Fetch tree types for the dropdown
         const treeTypeData = await getAllActiveTreeType();
-        if (Array.isArray(treeTypeData)) {
-          setTreeTypes(treeTypeData);
-        } else {
+        if (!Array.isArray(treeTypeData)) {
           throw new Error("Invalid tree type data format received from API");
         }
+        setTreeTypes(treeTypeData);
 
-        // Fetch timber natures for the dimensions dropdown
         const timberNatureData = await getAllActiveTimberNature();
-        if (Array.isArray(timberNatureData)) {
-          setTimberNatures(timberNatureData); // Set timber natures for the dropdown
-        } else {
+        if (!Array.isArray(timberNatureData)) {
           throw new Error("Invalid timber nature data format received from API");
         }
+        setTimberNatures(timberNatureData);
 
         setLoading(false);
-      } catch (error) {
-        setError(error.message);
+      } catch (err) {
+        setError(err?.message || "Something went wrong");
         setLoading(false);
       }
     };
@@ -120,25 +110,7 @@ const PriceCardList = () => {
 
   const updateDimensionOptions = (nature) => {
     if (nature === "Planks") {
-      setDimensionOptions([
-        "0.1 x 5",
-        "0.2 x 5",
-        "0.3 x 5",
-        "0.4 x 5",
-        "0.5 x 5",
-        "0.6 x 5",
-        "0.7 x 5",
-        "0.8 x 5",
-
-        "0.1 x 6",
-        "0.2 x 6",
-        "0.3 x 6",
-        "0.4 x 6",
-        "0.5 x 6",
-        "0.6 x 6",
-        "0.7 x 6",
-        "0.8 x 6",
-      ]);
+    setDimensionOptions(generatePlankDimensions());
     } else if (nature === "Blocks") {
       setDimensionOptions([
         "2 x 2",
@@ -160,76 +132,101 @@ const PriceCardList = () => {
     }
   };
 
+const generatePlankDimensions = () => {
+  const dimensions = [];
+
+  for (let length = 0.4; length <= 2.0; length += 0.1) {
+    const decimal = Number((length % 1).toFixed(1));
+
+    // ❌ skip .8 and .9 (feet–inch rule)
+    if (decimal === 0.8 || decimal === 0.9) continue;
+
+    for (let width = 1; width <= 12; width++) {
+      dimensions.push(`${length.toFixed(1)} x ${width}`);
+    }
+  }
+
+  return dimensions;
+};
+
+
+
   const handleSearch = () => {
     let filteredData = categories;
 
     if (timberTypeQuery) {
-      const lowercasedTimberTypeQuery = timberTypeQuery.toLowerCase();
-      filteredData = filteredData.filter((category) =>
-        category.timberType.toLowerCase().includes(lowercasedTimberTypeQuery)
+      const q = timberTypeQuery.toLowerCase();
+      filteredData = filteredData.filter((c) =>
+        (c.timberType ?? "").toLowerCase().includes(q)
       );
     }
 
     if (timberNatuerQuery) {
-      const lowercasedTimberNatuerQuery = timberNatuerQuery.toLowerCase();
-      updateDimensionOptions(timberNatuerQuery);
-      console.log("timberNatuerQuery:",timberNatuerQuery);
-      filteredData = filteredData.filter((category) =>
-        category.timberNature.toLowerCase().includes(lowercasedTimberNatuerQuery)
+      const q = timberNatuerQuery.toLowerCase();
+      filteredData = filteredData.filter((c) =>
+        (c.timberNature ?? "").toLowerCase().includes(q)
       );
     }
 
-    if (dimensionsQuery) {
-      const lowercasedDimensionsQuery = dimensionsQuery.toLowerCase();
-      const [queryLength, queryWidth] = lowercasedDimensionsQuery.split('x').map(part => part.trim());
-      filteredData = filteredData.filter((category) =>
-        category.areaLength.toString().toLowerCase().includes(queryLength) &&
-        category.areaWidth.toString().toLowerCase().includes(queryWidth)
+  if (dimensionsQuery) {
+    const [aRaw, bRaw] = dimensionsQuery
+      .toLowerCase()
+      .split("x")
+      .map((p) => p.trim());
+
+    const a = Number(aRaw);
+    const b = Number(bRaw);
+
+    filteredData = filteredData.filter((c) => {
+      const len = Number(c.areaLength);
+      const wid = Number(c.areaWidth);
+
+      // Match both orientations: (a,b) OR (b,a)
+      return (len === a && wid === b) || (len === b && wid === a);
+    });
+  }
+
+    // ✅ Category Id filter AFTER Dimensions
+    if (categoryIdQuery) {
+      filteredData = filteredData.filter(
+        (c) => String(c.categoryId) === String(categoryIdQuery)
       );
     }
 
     if (generalQuery) {
-      const lowercasedGeneralQuery = generalQuery.toLowerCase();
-      filteredData = filteredData.filter((category) =>
-        Object.values(category).some((value) =>
-          String(value).toLowerCase().includes(lowercasedGeneralQuery)
-        )
+      const q = generalQuery.toLowerCase();
+      filteredData = filteredData.filter((c) =>
+        Object.values(c).some((val) => String(val).toLowerCase().includes(q))
       );
     }
 
     setFilteredCategories(filteredData);
   };
 
+  // ✅ Run search when filters change (include categoryIdQuery)
   useEffect(() => {
     handleSearch();
-  }, [generalQuery, timberTypeQuery, timberNatuerQuery, dimensionsQuery]);
+  }, [generalQuery, timberTypeQuery, timberNatuerQuery, dimensionsQuery, categoryIdQuery, categories]);
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+    if (e.key === "Enter") handleSearch();
   };
 
-  if (loading) {
-    return <Loading />;
-  }
+  if (loading) return <Loading />;
+  if (error) return <ErrorAlert error={error} />;
 
-  if (error) {
-    return <ErrorAlert error={error} />;
-  }
+  // ✅ unique category ids for dropdown (avoid duplicates)
+  const uniqueCategoryIds = [...new Set(categories.map((c) => c.categoryId))];
 
   return (
     <>
       <Grid container>
         <Grid item xs={12} p={1}>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-          >
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="h6" fontWeight="bold" sx={{ color: "#9C6B3D" }}>
               Price Details
             </Typography>
+
             <Button
               variant="contained"
               startIcon={<AddCircleOutlineOutlinedIcon />}
@@ -241,6 +238,7 @@ const PriceCardList = () => {
             </Button>
           </Stack>
         </Grid>
+
         <Grid item xs={12} p={1}>
           <Stack
             p={2}
@@ -254,15 +252,14 @@ const PriceCardList = () => {
             }}
           >
             <Stack direction="row" spacing={2}>
+              {/* Timber Type */}
               <TextField
                 select
                 size="small"
                 value={timberTypeQuery}
                 onChange={(e) => setTimberTypeQuery(e.target.value)}
                 label="Timber Type"
-                sx={{
-                  minWidth: "180px",
-                }}
+                sx={{ minWidth: "180px" }}
               >
                 <MenuItem value="">
                   <em>None</em>
@@ -274,18 +271,24 @@ const PriceCardList = () => {
                 ))}
               </TextField>
 
+              {/* Timber Nature */}
               <TextField
                 select
                 size="small"
                 value={timberNatuerQuery}
                 onChange={(e) => {
-                  setTimberNatuerQuery(e.target.value);
-                  updateDimensionOptions(e.target.value);
+                  const val = e.target.value;
+                  setTimberNatuerQuery(val);
+                  updateDimensionOptions(val);
+
+                  // ✅ If nature cleared, clear dependent fields
+                  if (!val) {
+                    setDimensionsQuery("");
+                    setDimensionOptions([]);
+                  }
                 }}
                 label="Timber Nature"
-                sx={{
-                  minWidth: "180px",
-                }}
+                sx={{ minWidth: "180px" }}
               >
                 <MenuItem value="">
                   <em>None</em>
@@ -297,27 +300,48 @@ const PriceCardList = () => {
                 ))}
               </TextField>
 
+              {/* Dimensions */}
               <TextField
                 select
                 size="small"
                 value={dimensionsQuery}
                 onChange={(e) => setDimensionsQuery(e.target.value)}
                 label="Dimensions"
-                sx={{
-                  minWidth: "180px",
-                }}
+                sx={{ minWidth: "180px" }}
+                disabled={!timberNatuerQuery}
               >
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
-                {dimensionOptions.map(option => (
+                {dimensionOptions.map((option) => (
                   <MenuItem key={option} value={option}>
                     {option}
                   </MenuItem>
                 ))}
               </TextField>
-              
+
+              {/* Category ID dropdown AFTER Dimensions */}
+              <TextField
+                select
+                size="small"
+                value={categoryIdQuery}
+                onChange={(e) => setCategoryIdQuery(e.target.value)}
+                label="Category ID"
+                sx={{ minWidth: "180px" }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+
+                {uniqueCategoryIds.map((id) => (
+                  <MenuItem key={id} value={id}>
+                    {id}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Stack>
+
+            {/* General search */}
             <TextField
               size="small"
               InputProps={{
@@ -338,17 +362,11 @@ const PriceCardList = () => {
 
         <Grid item xs={12} p={1}>
           <DataGrid
-            sx={{
-              bgcolor: "background.default",
-            }}
+            sx={{ bgcolor: "background.default" }}
             rows={filteredCategories}
             columns={columns}
             initialState={{
-              pagination: {
-                paginationModel: {
-                  pageSize: 10,
-                },
-              },
+              pagination: { paginationModel: { pageSize: 10 } },
             }}
             pageSizeOptions={[10, 20, 50]}
             disableRowSelectionOnClick
