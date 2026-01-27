@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getAllemployeeDetails } from "../../../services/EmployeeManagementService/EmployeeDetailService";
+import { getEmpOrderByEmpID } from "../../../services/EmployeeManagementService/EmployeeDetailService";
 import {
   Avatar,
   Stack,
@@ -165,7 +165,7 @@ const EmployeeList = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getAllemployeeDetails();
+        const data = await getEmpOrderByEmpID();
         console.log("Fetched data:", data);
         if (Array.isArray(data)) {
           setCategories(data);

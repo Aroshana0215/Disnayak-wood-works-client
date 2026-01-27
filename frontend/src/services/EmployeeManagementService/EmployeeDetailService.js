@@ -9,7 +9,10 @@ import {
   setDoc,
   runTransaction,
   query,
-  where
+  where,
+  orderBy ,
+  limit, 
+  startAfter
 } from "firebase/firestore";
 import { uploadToCloudinary } from "../../services/ImageUploadService/ImageUploadService";
 
@@ -74,6 +77,30 @@ export const getAllemployeeDetails = async () => {
     throw error;
   }
 };
+
+export const getEmpOrderByEmpID = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, "employeeDetails"));
+    const employeeDetailsList = [];
+    
+    querySnapshot.forEach((doc) => {
+      employeeDetailsList.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Sort the list based on the numeric part of empID (after "EMP-")
+    employeeDetailsList.sort((a, b) => {
+      const numA = parseInt(a.empID.replace("EMP-", ""), 10); // Extract and convert numeric part
+      const numB = parseInt(b.empID.replace("EMP-", ""), 10); // Extract and convert numeric part
+      return numA - numB;
+    });
+
+    return employeeDetailsList;
+  } catch (error) {
+    console.error("Error fetching employeeDetails List: ", error.message);
+    throw error;
+  }
+};
+
 
 export const getAllActiveEmployeeDetails = async () => {
   try {
