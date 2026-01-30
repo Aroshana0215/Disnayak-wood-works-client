@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Stack, AppBar, Toolbar, Typography, Button } from "@mui/material";
 import { Link, useLocation } from "react-router-dom";
-import dwwLogo from "../../assets/images/dwwLogo4.png";
+import dwwLogo from "../../assets/images/dwwHLogo.png";
 
 export default function HeaderAuth() {
   const location = useLocation();
@@ -17,8 +17,8 @@ export default function HeaderAuth() {
         }}
       >
         <Toolbar>
-          <Box component={Link} to={"/"} paddingX={2}>
-            <img alt="Logo" src={dwwLogo} width={60} />
+          <Box component={Link} to={"/"} >
+            <img alt="Logo" src={dwwLogo} width={120} />
           </Box>
 
           <Stack

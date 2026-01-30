@@ -1,7 +1,7 @@
 import React from "react";
 import { Stack, AppBar, Toolbar, Typography, Box } from "@mui/material";
 import { Link } from "react-router-dom";
-import dwwLogo from "../../assets/images/dwwLogo4.png";
+import dwwLogo from "../../assets/images/dwwHLogo.png";
 import AccountMenu from "../Menus/AccountMenu";
 
 export default function HeaderMain() {
