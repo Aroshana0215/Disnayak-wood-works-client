@@ -34,6 +34,7 @@ import StockHistory from "../Views/BillAndOrderManagement/StockHistory";
 import EmployeeList from "../Views/EmployeeManagement/EmployeeDetailsManagment/EmployeeList";
 import EPaymentList from "../Views/EmployeeManagement/EmployeeDetailsManagment/EmployeePaymentList";
 import CreateEmployee from "../Views/EmployeeManagement/EmployeeDetailsManagment/CreateEmployee";
+import UpdateEmpUpdate from "../Views/EmployeeManagement/EmployeeDetailsManagment/UpdateEmpUpdate.js";
 import DailyDetailList from "../Views/EmployeeManagement/EmployeeDailyRecordsManagment/DailyDetailList";
 import CreateDailyDetails from "../Views/EmployeeManagement/EmployeeDailyRecordsManagment/CreateDailyDetails";
 import ViewEmpDetails from "../Views/EmployeeManagement/EmployeeDetailsManagment/ViewEmpDetails";
@@ -172,6 +173,10 @@ const privateRouter = createBrowserRouter([
       {
         path: "/employee/payment/:eid",
         element: <EPaymentList />,
+      },
+      {
+        path: "/employee/update/:eid",
+        element: <UpdateEmpUpdate />,
       },
       {
         path: "/employee/add",

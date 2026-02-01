@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Grid,
@@ -15,16 +15,19 @@ import {
 } from "@mui/material";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { useParams } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
-import { newEmployee } from "../../../services/EmployeeManagementService/EmployeeDetailService";
+import {
+  newEmployee,
+  getemployeeDetailsById,
+  updateemployeeDetails,
+} from "../../../services/EmployeeManagementService/EmployeeDetailService";
 
-const CreateEmployee = () => {
+const CreateEmployee = ({ mode = "create" }) => {
+  const { eid } = useParams(); // For update, we get the employee ID from the URL
   const { user } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
   const [salaryType, setSalaryType] = useState("DAY"); // DAY | MONTH
-
-  const currentDate = new Date().toISOString().split("T")[0];
-
   const [payload, setPayload] = useState({
     firstName: "",
     lastName: "",
@@ -38,7 +41,7 @@ const CreateEmployee = () => {
     joinDate: "",
     employeeImage: null,
     status: "A",
-    createdDate: currentDate,
+    createdDate: new Date().toISOString().split("T")[0],
     createdBy: user?.displayName || user?.email || user?.uid || "System",
     modifiedBy: "",
     modifiedDate: "",
@@ -47,49 +50,37 @@ const CreateEmployee = () => {
   const [errors, setErrors] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
 
+  useEffect(() => {
+    if (mode === "update" && eid) {
+      const fetchEmployeeDetails = async () => {
+        try {
+          const empDetails = await getemployeeDetailsById(eid);
+          setPayload(empDetails);
+          setSalaryType(empDetails.salaryPerDay ? "DAY" : "MONTH"); // Determine salary type based on data
+        } catch (error) {
+          toast.error("Error fetching employee details for update: " + error.message);
+        }
+      };
+      fetchEmployeeDetails();
+    }
+  }, [eid, mode]);
+
   const validate = () => {
     let tempErrors = {};
-
-    // validate all required fields except system/optional & salary fields (handled separately)
+    // Validate all required fields except system/optional & salary fields
     Object.entries(payload).forEach(([key, value]) => {
-      const optionalOrSystem = [
-        "currentLendAmount",
-        "modifiedBy",
-        "modifiedDate",
-        "salaryPerDay",
-        "salaryPerMonth",
-        "employeeImage",
-      ];
-
-      if (optionalOrSystem.includes(key)) return;
-
-      if (!value) {
+      if (!value && !["currentLendAmount", "modifiedBy", "modifiedDate", "salaryPerDay", "salaryPerMonth", "employeeImage"].includes(key)) {
         tempErrors[key] = `${key.replace(/([A-Z])/g, " $1").trim()} is required`;
       }
     });
 
     // Salary validation based on selected salary type
-    if (salaryType === "DAY") {
-      if (!payload.salaryPerDay) tempErrors.salaryPerDay = "Salary per day is required";
-      if (payload.salaryPerDay && isNaN(payload.salaryPerDay)) tempErrors.salaryPerDay = "Salary must be a valid number";
-    } else {
-      if (!payload.salaryPerMonth) tempErrors.salaryPerMonth = "Salary per month is required";
-      if (payload.salaryPerMonth && isNaN(payload.salaryPerMonth))
-        tempErrors.salaryPerMonth = "Salary must be a valid number";
-    }
+    if (salaryType === "DAY" && !payload.salaryPerDay) tempErrors.salaryPerDay = "Salary per day is required";
+    if (salaryType === "MONTH" && !payload.salaryPerMonth) tempErrors.salaryPerMonth = "Salary per month is required";
 
-    // Other validations
-    if (payload.phoneNo && !/^\d{10}$/.test(payload.phoneNo)) {
-      tempErrors.phoneNo = "Phone number must be 10 digits";
-    }
-
-    if (payload.otValuePerHour && isNaN(payload.otValuePerHour)) {
-      tempErrors.otValuePerHour = "OT Value must be a valid number";
-    }
-
-    if (!payload.employeeImage) {
-      tempErrors.employeeImage = "Employee image is required";
-    }
+    if (payload.phoneNo && !/^\d{10}$/.test(payload.phoneNo)) tempErrors.phoneNo = "Phone number must be 10 digits";
+    if (payload.otValuePerHour && isNaN(payload.otValuePerHour)) tempErrors.otValuePerHour = "OT Value must be a valid number";
+    if (!payload.employeeImage) tempErrors.employeeImage = "Employee image is required";
 
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
@@ -129,15 +120,11 @@ const CreateEmployee = () => {
   const handleSalaryTypeChange = (e) => {
     const nextType = e.target.value;
     setSalaryType(nextType);
-
-    // clear the opposite field so you don't accidentally store both
     setPayload((prev) => ({
       ...prev,
       salaryPerDay: nextType === "DAY" ? prev.salaryPerDay : "",
       salaryPerMonth: nextType === "MONTH" ? prev.salaryPerMonth : "",
     }));
-
-    // clear salary errors when switching
     setErrors((prev) => {
       const { salaryPerDay, salaryPerMonth, ...rest } = prev;
       return rest;
@@ -156,23 +143,24 @@ const CreateEmployee = () => {
     try {
       const finalPayload = {
         ...payload,
-        // keep only the selected salary field
         salaryPerDay: salaryType === "DAY" ? payload.salaryPerDay : "",
         salaryPerMonth: salaryType === "MONTH" ? payload.salaryPerMonth : "",
-        // (optional) keep createdBy safe even if auth changes
-        createdBy: payload.createdBy || user?.displayName || user?.email || user?.uid || "System",
       };
 
-      await newEmployee(finalPayload);
-      toast.success("Employee created successfully!");
+      if (mode === "create") {
+        await newEmployee(finalPayload);
+        toast.success("Employee created successfully!");
+      } else {
+        await updateemployeeDetails(eid, finalPayload);
+        toast.success("Employee details updated successfully!");
+      }
 
       setTimeout(() => {
         setLoading(false);
         window.location.href = "/employee";
       }, 1000);
     } catch (error) {
-      toast.error("Error creating employee: " + error.message);
-      console.error("Error creating employee:", error);
+      toast.error("Error submitting form: " + error.message);
       setLoading(false);
     }
   };
@@ -181,7 +169,7 @@ const CreateEmployee = () => {
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
         <Typography variant="h4" sx={{ color: "#9C6B3D" }} align="center" gutterBottom>
-          Employee Details Submission
+          {mode === "create" ? "Employee Details Submission" : "Update Employee Details"}
         </Typography>
 
         <Grid container component="form" onSubmit={handleSubmit} spacing={2}>
@@ -198,11 +186,8 @@ const CreateEmployee = () => {
           {/* Dynamic Fields */}
           {Object.entries(payload).map(([key, value]) => {
             const hiddenKeys = ["status", "createdDate", "createdBy", "modifiedBy", "modifiedDate", "employeeImage"];
-
-            // Hide salaryPerDay when MONTH selected, and salaryPerMonth when DAY selected
             if (salaryType === "DAY" && key === "salaryPerMonth") return null;
             if (salaryType === "MONTH" && key === "salaryPerDay") return null;
-
             if (hiddenKeys.includes(key)) return null;
 
             return (
@@ -283,7 +268,7 @@ const CreateEmployee = () => {
           {/* Submit */}
           <Grid item xs={12} display="flex" justifyContent="flex-end">
             <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }} size="large" disabled={loading}>
-              {loading ? <CircularProgress size={24} color="inherit" /> : "Create"}
+              {loading ? <CircularProgress size={24} color="inherit" /> : mode === "create" ? "Create" : "Update"}
             </Button>
           </Grid>
         </Grid>

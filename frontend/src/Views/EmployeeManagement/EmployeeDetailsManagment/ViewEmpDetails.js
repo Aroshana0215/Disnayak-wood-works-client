@@ -118,7 +118,28 @@ const ViewEmpDetails = () => {
     <Container sx={{ mt: 4 }}>
       <Grid container spacing={4} justifyContent="center">
         <Grid item xs={12} textAlign="center">
-          <Typography variant="h4" sx={{ color: "#9C6B3D" }}>
+          <Typography
+            variant="h4"
+            align="center"
+            sx={{
+              color: "#9C6B3D",
+              fontWeight: 800,
+              letterSpacing: 0.5,
+              mb: 3,
+              position: "relative",
+              "&::after": {
+                content: '""',
+                display: "block",
+                width: 90,
+                height: 4,
+                borderRadius: 99,
+                bgcolor: "#9C6B3D",
+                opacity: 0.35,
+                mx: "auto",
+                mt: 1.2,
+              },
+            }}
+          >
             Employee Profile
           </Typography>
         </Grid>
@@ -190,19 +211,29 @@ const ViewEmpDetails = () => {
                   />
                 </FormLabel>
               </FormControl>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Box display="flex" justifyContent="space-between">
+                <Button
+                  variant="outlined"
+                  sx={{ borderRadius: 2 }}
+                  onClick={() => navigate("/employee")}
+                >
+                  Back
+                </Button>
+
+                <Button
+                  variant="contained"
+                  sx={{ bgcolor: "#9C6B3D", borderRadius: 2 }}
+                  onClick={() => navigate(`/employee/update/${eid}`)}
+                >
+                  Update
+                </Button>
+              </Box>
+
             </CardContent>
           </Card>
-        </Grid>
-
-        {/* Actions */}
-        <Grid item xs={12} display="flex" justifyContent="center">
-          <Button
-            variant="contained"
-            sx={{ color: "#9C6B3D", borderRadius: 2 }}
-            onClick={() => navigate("/employee")}
-          >
-            Back
-          </Button>
         </Grid>
       </Grid>
     </Container>
