@@ -32,7 +32,8 @@ const CreateCategory = () => {
   const [isplank, setIsplank] = useState(false);
   const [isTimberDust, setIsTimberDust] = useState(false);
   const [isLumber, setisLumber] = useState(false);
-  const [isWoodwork, setIsWoodwork] = useState(false); // ✅ NEW
+  const [isWoodwork, setIsWoodwork] = useState(false);
+  const [isBlockMould, setIsBlockMould] = useState(false)
 
   const [treeTypes, setTreeTypes] = useState([]);
   const [timberNature, setTimberNature] = useState([]);
@@ -66,7 +67,7 @@ const CreateCategory = () => {
     0.3, 0.4, 0.5, 0.6, 0.7, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 2, 2.1,
     2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 3,
   ];
-  const defaultValues = Array.from({ length: 10 }, (_, i) => i + 1);
+  const defaultValues = Array.from({ length: 30 }, (_, i) => i + 1);
 
   const renderMenuItems = (values) =>
     values.map((value) => (
@@ -88,7 +89,7 @@ const CreateCategory = () => {
       if (name === "timberNature") {
         // ✅ flags
         setIsWoodwork(value === "Woodwork");
-
+        setIsBlockMould(value === "BlockMould");
         if (value === "Planks") {
           setIsplank(true);
           setIsTimberDust(false);
@@ -159,7 +160,7 @@ const CreateCategory = () => {
         }
       } else {
         // ✅ Woodwork: do NOT require min/max (they are 0)
-        if (isWoodwork && (field.name === "minlength" || field.name === "maxlength")) {
+        if ((isBlockMould || isWoodwork) && (field.name === "minlength" || field.name === "maxlength")) {
           // skip
         } else {
           if (!payload[field.name] || payload[field.name] === "") {
@@ -178,7 +179,7 @@ const CreateCategory = () => {
     }
 
     try {
-       if (!isWoodwork) {
+       if (!isWoodwork || !isBlockMould) {
         const categoryData = await validateCategoryType(payload);
         if (categoryData != null) {
           if (Array.isArray(categoryData)) {
@@ -200,7 +201,7 @@ const CreateCategory = () => {
     }
 
       // ✅ Skip length overlap validation if Woodwork (min/max are 0)
-      if (!isWoodwork) {
+      if (!isWoodwork || !isBlockMould) {
         const categoryData2 = await validateCategoryType2(payload);
         if (categoryData2 != null) {
           if (Array.isArray(categoryData2)) {
@@ -324,7 +325,7 @@ const CreateCategory = () => {
                   name="minlength"
                   value={payload.minlength}
                   onChange={handleChange}
-                  disabled={isTimberDust || isWoodwork} // ✅ disable only for Woodwork (and Dust)
+                  disabled={isTimberDust || isWoodwork || isBlockMould} // ✅ disable only for Woodwork (and Dust)
                 >
                   {[...Array(25)].map((_, i) => (
                     <MenuItem key={i + 1} value={i + 1}>
@@ -342,7 +343,7 @@ const CreateCategory = () => {
                   name="maxlength"
                   value={payload.maxlength}
                   onChange={handleChange}
-                  disabled={isTimberDust || isWoodwork} // ✅ disable only for Woodwork (and Dust)
+                  disabled={isTimberDust || isWoodwork || isBlockMould} // ✅ disable only for Woodwork (and Dust)
                 >
                   {[...Array(25)].map((_, i) => (
                     <MenuItem key={i + 1} value={i + 1}>

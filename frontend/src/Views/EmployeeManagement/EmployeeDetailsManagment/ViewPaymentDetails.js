@@ -161,9 +161,11 @@ const ViewPaymentDetails = () => {
                 { label: "Total OT Hours", value: paymentDetails.totalOt },
                 { label: "Total Advance", value: paymentDetails.totalAdvance },
                 { label: "Reduce Amount", value: paymentDetails.reduceAmount },
+                { label: "Total WorkedHolidays", value: paymentDetails.workingHolidayAmount },
+                { label: "WorkedHolidays payment", value: paymentDetails.holidayTotal },
+                { label: "Total Payment", value: paymentDetails.totalPayment },
                 { label: "Actual Payment", value: paymentDetails.actualPayment },
                 { label: "Payment Status", value: paymentDetails.paymentStatus },
-                { label: "Total Payment", value: paymentDetails.totalPayment },
               ].map((item, i) => (
                 <Box key={i}>
                   <Typography variant="caption" color="text.secondary">

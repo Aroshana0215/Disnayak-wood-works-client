@@ -78,6 +78,7 @@ const UpdateEmpUpdate = () => {
     if (!employee?.lastName?.trim()) temp.lastName = "Last name is required";
     if (!employee?.phoneNo?.trim()) temp.phoneNo = "Phone number is required";
     if (!employee?.nic?.trim()) temp.nic = "NIC is required";
+    if (!employee?.holidayRate?.trim()) temp.holidayRate = "Holiday Rate is required";
 
     // Salary validation - validate only the visible one
     if (salaryType === "DAY") {
@@ -121,6 +122,7 @@ const UpdateEmpUpdate = () => {
       phoneNo: employee.phoneNo ?? "",
       address: employee.address ?? "",
       joinDate: employee.joinDate ?? "",
+      holidayRate: employee.holidayRate ?? "",
       otValuePerHour: employee.otValuePerHour ?? "",
       employeeImage: employee.employeeImage ?? "",
       status: employee.status ?? "A",
@@ -168,30 +170,30 @@ const UpdateEmpUpdate = () => {
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
-      <Typography
+        <Typography
         variant="h4"
         align="center"
         sx={{
-          color: "#9C6B3D",
-          fontWeight: 800,
-          letterSpacing: 0.5,
-          mb: 3,
-          position: "relative",
-          "&::after": {
+            color: "primary.main",
+            fontWeight: 800,
+            letterSpacing: 0.5,
+            mb: 3,
+            position: "relative",
+            "&::after": {
             content: '""',
             display: "block",
             width: 90,
             height: 4,
             borderRadius: 99,
-            bgcolor: "#9C6B3D",
+            bgcolor: "primary.main",
             opacity: 0.35,
             mx: "auto",
             mt: 1.2,
-          },
+            },
         }}
-      >
+        >
         Update Employee
-      </Typography>
+        </Typography>
 
         <Box component="form" onSubmit={handleSubmit}>
           <Grid container spacing={2}>
@@ -327,6 +329,18 @@ const UpdateEmpUpdate = () => {
               />
             </Grid>
 
+             {/* Holiday Rate*/}
+            <Grid item xs={12} md={6}>
+              <TextField
+                name="holidayRate"
+                label="Holiday Rate"
+                value={employee.holidayRate ?? ""}
+                onChange={handleChange}
+                fullWidth
+                size="small"
+              />
+            </Grid>
+
             {/* Status */}
             <Grid item xs={12} md={6} display="flex" alignItems="center">
               <FormControlLabel
@@ -350,7 +364,7 @@ const UpdateEmpUpdate = () => {
                 type="submit"
                 variant="contained"
                 disabled={saving}
-                sx={{ bgcolor: "#9C6B3D" }}
+                sx={{ color: "primary" }}
               >
                 {saving ? (
                   <CircularProgress size={22} color="inherit" />

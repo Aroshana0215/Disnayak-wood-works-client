@@ -23,7 +23,7 @@ import {
   getAllemployeeDailyDetails,
   updateemployeeDailyDetails,
 } from "../../../services/EmployeeManagementService/EmployeeDailyDetailService";
-import { getAllActiveEmployeeDetails } from "../../../services/EmployeeManagementService/EmployeeDetailService";
+import { getAllemployeeDetails } from "../../../services/EmployeeManagementService/EmployeeDetailService";
 import Loading from "../../../Components/Progress/Loading";
 import ErrorAlert from "../../../Components/Alert/ErrorAlert";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
@@ -295,7 +295,7 @@ const DailyDetailList = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const data = await getAllActiveEmployeeDetails();
+        const data = await getAllemployeeDetails();
         if (Array.isArray(data)) setEmployeeList(data);
         else throw new Error("Invalid employee data format");
       } catch (error) {

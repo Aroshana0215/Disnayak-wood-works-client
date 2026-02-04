@@ -12,6 +12,7 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
+  Avatar,
 } from "@mui/material";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -24,10 +25,12 @@ import {
 } from "../../../services/EmployeeManagementService/EmployeeDetailService";
 
 const CreateEmployee = ({ mode = "create" }) => {
-  const { eid } = useParams(); // For update, we get the employee ID from the URL
+  const { eid } = useParams();
   const { user } = useSelector((state) => state.auth);
+
   const [loading, setLoading] = useState(false);
   const [salaryType, setSalaryType] = useState("DAY"); // DAY | MONTH
+
   const [payload, setPayload] = useState({
     firstName: "",
     lastName: "",
@@ -39,6 +42,7 @@ const CreateEmployee = ({ mode = "create" }) => {
     salaryPerMonth: "",
     currentLendAmount: "",
     joinDate: "",
+    holidayRate: "0",
     employeeImage: null,
     status: "A",
     createdDate: new Date().toISOString().split("T")[0],
@@ -55,8 +59,19 @@ const CreateEmployee = ({ mode = "create" }) => {
       const fetchEmployeeDetails = async () => {
         try {
           const empDetails = await getemployeeDetailsById(eid);
-          setPayload(empDetails);
-          setSalaryType(empDetails.salaryPerDay ? "DAY" : "MONTH"); // Determine salary type based on data
+
+          setPayload({
+            ...empDetails,
+            holidayRate:
+              empDetails?.holidayRate !== undefined &&
+              empDetails?.holidayRate !== null &&
+              String(empDetails?.holidayRate).trim() !== ""
+                ? String(empDetails.holidayRate)
+                : "0",
+          });
+
+          const isDay = empDetails?.salaryPerDay && Number(empDetails.salaryPerDay) > 0;
+          setSalaryType(isDay ? "DAY" : "MONTH");
         } catch (error) {
           toast.error("Error fetching employee details for update: " + error.message);
         }
@@ -67,19 +82,40 @@ const CreateEmployee = ({ mode = "create" }) => {
 
   const validate = () => {
     let tempErrors = {};
-    // Validate all required fields except system/optional & salary fields
+
     Object.entries(payload).forEach(([key, value]) => {
-      if (!value && !["currentLendAmount", "modifiedBy", "modifiedDate", "salaryPerDay", "salaryPerMonth", "employeeImage"].includes(key)) {
+      const optionalKeys = [
+        "currentLendAmount",
+        "modifiedBy",
+        "modifiedDate",
+        "salaryPerDay",
+        "salaryPerMonth",
+        "employeeImage",
+        "holidayRate",
+      ];
+
+      if (!value && !optionalKeys.includes(key)) {
         tempErrors[key] = `${key.replace(/([A-Z])/g, " $1").trim()} is required`;
       }
     });
 
-    // Salary validation based on selected salary type
-    if (salaryType === "DAY" && !payload.salaryPerDay) tempErrors.salaryPerDay = "Salary per day is required";
-    if (salaryType === "MONTH" && !payload.salaryPerMonth) tempErrors.salaryPerMonth = "Salary per month is required";
+    if (salaryType === "DAY" && !payload.salaryPerDay)
+      tempErrors.salaryPerDay = "Salary per day is required";
 
-    if (payload.phoneNo && !/^\d{10}$/.test(payload.phoneNo)) tempErrors.phoneNo = "Phone number must be 10 digits";
-    if (payload.otValuePerHour && isNaN(payload.otValuePerHour)) tempErrors.otValuePerHour = "OT Value must be a valid number";
+    if (salaryType === "MONTH" && !payload.salaryPerMonth)
+      tempErrors.salaryPerMonth = "Salary per month is required";
+
+    if (salaryType === "MONTH") {
+      const hr = parseFloat(payload.holidayRate || 0);
+      if (!Number.isFinite(hr) || hr < 0) tempErrors.holidayRate = "Holiday Rate must be 0 or greater";
+    }
+
+    if (payload.phoneNo && !/^\d{10}$/.test(payload.phoneNo))
+      tempErrors.phoneNo = "Phone number must be 10 digits";
+
+    if (payload.otValuePerHour && isNaN(payload.otValuePerHour))
+      tempErrors.otValuePerHour = "OT Value must be a valid number";
+
     if (!payload.employeeImage) tempErrors.employeeImage = "Employee image is required";
 
     setErrors(tempErrors);
@@ -114,19 +150,24 @@ const CreateEmployee = ({ mode = "create" }) => {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
+
+      setErrors((prev) => ({ ...prev, employeeImage: "" }));
     }
   };
 
   const handleSalaryTypeChange = (e) => {
     const nextType = e.target.value;
     setSalaryType(nextType);
+
     setPayload((prev) => ({
       ...prev,
       salaryPerDay: nextType === "DAY" ? prev.salaryPerDay : "",
       salaryPerMonth: nextType === "MONTH" ? prev.salaryPerMonth : "",
+      holidayRate: nextType === "MONTH" ? (prev.holidayRate ?? "0") : "0",
     }));
+
     setErrors((prev) => {
-      const { salaryPerDay, salaryPerMonth, ...rest } = prev;
+      const { salaryPerDay, salaryPerMonth, holidayRate, ...rest } = prev;
       return rest;
     });
   };
@@ -145,6 +186,7 @@ const CreateEmployee = ({ mode = "create" }) => {
         ...payload,
         salaryPerDay: salaryType === "DAY" ? payload.salaryPerDay : "",
         salaryPerMonth: salaryType === "MONTH" ? payload.salaryPerMonth : "",
+        holidayRate: salaryType === "MONTH" ? String(payload.holidayRate || "0") : "0",
       };
 
       if (mode === "create") {
@@ -173,7 +215,7 @@ const CreateEmployee = ({ mode = "create" }) => {
         </Typography>
 
         <Grid container component="form" onSubmit={handleSubmit} spacing={2}>
-          {/* Salary Type Radio (Top Center) */}
+          {/* Salary Type Radio */}
           <Grid item xs={12} display="flex" justifyContent="center">
             <FormControl>
               <RadioGroup row value={salaryType} onChange={handleSalaryTypeChange}>
@@ -183,27 +225,42 @@ const CreateEmployee = ({ mode = "create" }) => {
             </FormControl>
           </Grid>
 
-          {/* Dynamic Fields */}
+          {/* Fields */}
           {Object.entries(payload).map(([key, value]) => {
             const hiddenKeys = ["status", "createdDate", "createdBy", "modifiedBy", "modifiedDate", "employeeImage"];
+
             if (salaryType === "DAY" && key === "salaryPerMonth") return null;
             if (salaryType === "MONTH" && key === "salaryPerDay") return null;
+            if (key === "holidayRate" && salaryType !== "MONTH") return null;
             if (hiddenKeys.includes(key)) return null;
+
+            const isJoinDate = key === "joinDate";
+            const isNumeric =
+              ["otValuePerHour", "salaryPerDay", "salaryPerMonth", "currentLendAmount", "holidayRate"].includes(key);
+
+            const label = key
+              .charAt(0)
+              .toUpperCase()
+              .concat(key.slice(1))
+              .replace(/([A-Z])/g, " $1");
 
             return (
               <Grid item key={key} xs={12} md={6}>
                 <FormControl fullWidth>
                   <Typography variant="body1" fontWeight={500} gutterBottom>
-                    {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1")}
+                    {label}
                   </Typography>
+
                   <TextField
                     name={key}
-                    value={value}
+                    value={value ?? ""}
                     onChange={handleChange}
                     variant="outlined"
                     fullWidth
-                    type={key === "joinDate" ? "date" : "text"}
-                    InputLabelProps={{ shrink: key === "joinDate" }}
+                    size="small"
+                    type={isJoinDate ? "date" : isNumeric ? "number" : "text"}
+                    inputProps={key === "holidayRate" ? { min: 0, step: "0.01" } : undefined}
+                    InputLabelProps={{ shrink: isJoinDate }}
                     error={!!errors[key]}
                     helperText={errors[key]}
                   />
@@ -212,41 +269,39 @@ const CreateEmployee = ({ mode = "create" }) => {
             );
           })}
 
-          {/* Employee Image Upload */}
+          {/* ✅ Image input SAME HEIGHT as other fields */}
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
               <Typography variant="body1" fontWeight={500} gutterBottom>
                 Employee Image
               </Typography>
 
-              <Box
-                sx={{
-                  border: "2px dashed grey",
-                  borderRadius: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: 60,
-                  cursor: "pointer",
-                  textAlign: "center",
-                  p: 2,
-                  backgroundColor: "#f9f9f9",
-                  "&:hover": { backgroundColor: "#f0f0f0" },
-                }}
-                onClick={() => document.getElementById("employeeImageInput").click()}
-              >
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    style={{ width: "100px", height: "100px", borderRadius: "50%" }}
-                  />
-                ) : (
-                  <Typography variant="body2" color="textSecondary">
-                    Click to upload PNG or JPG (Max 5MB)
-                  </Typography>
-                )}
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={payload.employeeImage?.name || ""}
+                  placeholder="Upload PNG or JPG (Max 5MB)"
+                  InputProps={{ readOnly: true }}
+                  error={!!errors.employeeImage}
+                  helperText={errors.employeeImage}
+                  onClick={() => document.getElementById("employeeImageInput").click()}
+                  sx={{ cursor: "pointer" }}
+                />
+
+                <Button
+                  variant="outlined"
+                  onClick={() => document.getElementById("employeeImageInput").click()}
+                  sx={{ height: "40px", whiteSpace: "nowrap" }}
+                >
+                  Upload
+                </Button>
+
+                <Avatar
+                  src={imagePreview || ""}
+                  sx={{ width: 40, height: 40 }}
+                  variant="circular"
+                />
               </Box>
 
               <input
@@ -256,12 +311,6 @@ const CreateEmployee = ({ mode = "create" }) => {
                 style={{ display: "none" }}
                 onChange={handleFileChange}
               />
-
-              {errors.employeeImage && (
-                <Typography color="error" variant="body2">
-                  {errors.employeeImage}
-                </Typography>
-              )}
             </FormControl>
           </Grid>
 

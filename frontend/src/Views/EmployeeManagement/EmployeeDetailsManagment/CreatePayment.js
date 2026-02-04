@@ -53,10 +53,12 @@ const CreatePayment = () => {
     empID: "",
     nic: "",
     address: "",
+    holidayRate: "",
     otValuePerHour: "",
     salaryPerDay: "",
     salaryPerMonth: "",
     currentLendAmount: "",
+    isMonthPayEmp: false, // ✅ make sure this exists in your employee doc
   });
 
   const [workDetail, setWorkDetail] = useState([]);
@@ -82,6 +84,10 @@ const CreatePayment = () => {
 
   // ✅ NEW: validation error for Payment Status
   const [paymentStatusError, setPaymentStatusError] = useState("");
+
+  // ✅ NEW: Working Holiday fields (only for month-pay employees with no day salary)
+  const [workingHolidayAmount, setWorkingHolidayAmount] = useState("0");
+  const [holidayTotal, setHolidayTotal] = useState("0.00");
 
   const currentDate = new Date();
   const formattedDate = currentDate.toISOString().slice(0, 10);
@@ -116,6 +122,12 @@ const CreatePayment = () => {
     return workedHours < 9 ? "Half Day" : "Full Day";
   };
 
+  // ✅ condition you asked:
+  // if salaryPerDay is null/empty AND isMonthPayEmp is true => show holiday fields
+  const showHolidayFields = !hasDaySalary(empData) && empData?.salaryPerDay == null 
+  || empData?.salaryPerDay <= 0 || empData?.salaryPerDay == undefined || String(empData?.salaryPerDay).trim() === "";
+  console.log("empData?.salaryPerDay" + empData?.salaryPerDay);
+
   useEffect(() => {
     const fetchEmpData = async () => {
       try {
@@ -129,6 +141,21 @@ const CreatePayment = () => {
     fetchEmpData();
   }, [eid]);
 
+  // ✅ calculate holidayTotal whenever user changes amount / rate
+  useEffect(() => {
+    if (!showHolidayFields) {
+      setWorkingHolidayAmount("0");
+      setHolidayTotal("0.00");
+      return;
+    }
+
+    const amount = parseFloat(workingHolidayAmount || 0);
+    const rate = parseFloat(empData?.holidayRate || 0);
+    const total = amount * rate;
+
+    setHolidayTotal((Number.isFinite(total) ? total : 0).toFixed(2));
+  }, [workingHolidayAmount, empData?.holidayRate, showHolidayFields]);
+
   useEffect(() => {
     const calculateActualPayment = () => {
       const payment =
@@ -138,8 +165,8 @@ const CreatePayment = () => {
 
       setTotalPayment(payment.toFixed(2));
 
-      const total =
-        payment - parseFloat(reduceAmount || 0) - parseFloat(totalAdvance || 0);
+      // ✅ UPDATED (your requested formula): add holidayTotal
+      const total = payment -  (parseFloat(reduceAmount || 0) + parseFloat(totalAdvance || 0) ) + parseFloat(holidayTotal || 0);
 
       setActualPayment(total.toFixed(2));
     };
@@ -151,6 +178,7 @@ const CreatePayment = () => {
     totalFullDaySal,
     totalHalfDaySal,
     toDate,
+    holidayTotal,
   ]);
 
   const handleDateChange = async (date) => {
@@ -197,9 +225,8 @@ const CreatePayment = () => {
 
         if (workedHours < 9) totHalfDays++;
         else totDays++;
-
-        totAdvance += parseFloat(item.advancePerDay || 0);
       }
+      totAdvance += parseFloat(item.advancePerDay || 0);
     });
 
     setTotalAdvance(totAdvance.toFixed(2));
@@ -208,9 +235,7 @@ const CreatePayment = () => {
 
     setTotalOt(totOt.toFixed(2));
     setOtPerHour(empData.otValuePerHour);
-    setTotalOtAmount(
-      (totOt * parseFloat(empData.otValuePerHour || 0)).toFixed(2)
-    );
+    setTotalOtAmount((totOt * parseFloat(empData.otValuePerHour || 0)).toFixed(2));
 
     // ✅ MONTH SALARY MODE: no full/half day calculations
     if (salaryMode === "MONTH") {
@@ -223,7 +248,7 @@ const CreatePayment = () => {
       return;
     }
 
-    // ✅ DAY SALARY MODE: keep existing behavior
+    // ✅ DAY SALARY MODE
     const daySalary = parseFloat(empData.salaryPerDay || 0);
     setSalaryPerDay(daySalary.toFixed(2));
 
@@ -248,13 +273,19 @@ const CreatePayment = () => {
       return false;
     }
     setPaymentStatusError("");
+
+    // ✅ optional: validate holiday amount (non-negative)
+    if (showHolidayFields && parseFloat(workingHolidayAmount || 0) < 0) {
+      toast.error("Working Holiday Amount cannot be negative");
+      return false;
+    }
+
     return true;
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // ✅ validate first
     if (!validateBeforeSubmit()) return;
 
     setLoading(true);
@@ -282,6 +313,12 @@ const CreatePayment = () => {
       eid_fk: empData.id,
       eid: empData.empID,
       employeeName: empData.firstName,
+      holidayRate: empData.holidayRate,
+
+      // ✅ NEW: include holiday info (optional but recommended)
+      workingHolidayAmount: showHolidayFields ? workingHolidayAmount : "0",
+      holidayTotal: showHolidayFields ? holidayTotal : "0.00",
+
       paymentStatus,
       reduceAmount,
       actualPayment,
@@ -338,9 +375,7 @@ const CreatePayment = () => {
       try {
         if (eid) {
           const latestToDate = await getLatestToDateByEmployee(eid);
-          let newFromDate = latestToDate
-            ? new Date(latestToDate.seconds * 1000)
-            : new Date();
+          let newFromDate = latestToDate ? new Date(latestToDate.seconds * 1000) : new Date();
           if (latestToDate) newFromDate.setDate(newFromDate.getDate() + 1);
           setFromDate(newFromDate);
         }
@@ -357,12 +392,7 @@ const CreatePayment = () => {
     <Container>
       <Grid container spacing={2} mt={2}>
         <Grid item xs={12}>
-          <Typography
-            variant="h4"
-            sx={{ color: "#9C6B3D" }}
-            align="center"
-            gutterBottom
-          >
+          <Typography variant="h4" sx={{ color: "#9C6B3D" }} align="center" gutterBottom>
             Pay Sheet
           </Typography>
         </Grid>
@@ -376,17 +406,13 @@ const CreatePayment = () => {
                   label="From Date"
                   value={fromDate}
                   onChange={(date) => setFromDate(date)}
-                  renderInput={(params) => (
-                    <TextField {...params} size="small" />
-                  )}
+                  renderInput={(params) => <TextField {...params} size="small" />}
                 />
                 <DatePicker
                   label="To Date"
                   value={toDate}
                   onChange={handleDateChange}
-                  renderInput={(params) => (
-                    <TextField {...params} size="small" />
-                  )}
+                  renderInput={(params) => <TextField {...params} size="small" />}
                   shouldDisableDate={(date) => fromDate && date < fromDate}
                 />
               </LocalizationProvider>
@@ -489,11 +515,7 @@ const CreatePayment = () => {
             <form onSubmit={handleSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.secondary"
-                    gutterBottom
-                  >
+                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                     📅 Attendance & Salary Info
                   </Typography>
                 </Grid>
@@ -583,13 +605,41 @@ const CreatePayment = () => {
                   </>
                 )}
 
+                {/* ✅ Working Holidays (only when salaryPerDay is empty AND isMonthPayEmp true) */}
+                {showHolidayFields && (
+                  <>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                        🏖️ Working Holidays
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Working Holiday Amount"
+                        type="number"
+                        value={workingHolidayAmount}
+                        onChange={(e) => setWorkingHolidayAmount(e.target.value)}
+                        fullWidth
+                        helperText="Default is 0"
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label={`Holiday Total (Rate: ${empData?.holidayRate || 0})`}
+                        type="number"
+                        value={holidayTotal}
+                        InputProps={{ readOnly: true }}
+                        fullWidth
+                      />
+                    </Grid>
+                  </>
+                )}
+
                 {/* OT Summary */}
                 <Grid item xs={12}>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.secondary"
-                    gutterBottom
-                  >
+                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                     ⏱️ Overtime Calculation
                   </Typography>
                 </Grid>
@@ -624,11 +674,7 @@ const CreatePayment = () => {
 
                 {/* Advance & Deductions */}
                 <Grid item xs={12}>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.secondary"
-                    gutterBottom
-                  >
+                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                     💸 Advance & Deductions
                   </Typography>
                 </Grid>
@@ -655,11 +701,7 @@ const CreatePayment = () => {
 
                 {/* Final */}
                 <Grid item xs={12}>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.secondary"
-                    gutterBottom
-                  >
+                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                     ✅ Final Payment
                   </Typography>
                 </Grid>
@@ -704,9 +746,7 @@ const CreatePayment = () => {
                       <MenuItem value="Completed">Completed</MenuItem>
                       <MenuItem value="Cancelled">Cancelled</MenuItem>
                     </Select>
-                    {paymentStatusError && (
-                      <FormHelperText>{paymentStatusError}</FormHelperText>
-                    )}
+                    {paymentStatusError && <FormHelperText>{paymentStatusError}</FormHelperText>}
                   </FormControl>
                 </Grid>
 
