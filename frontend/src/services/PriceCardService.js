@@ -69,6 +69,37 @@ export const getAllCategories = async () => {
   };
 
 
+export const getAllCategoriesByTypeNature = async (TreeType, Nature) => {
+  try {
+    console.log("TreeType:", TreeType);
+    console.log("Nature:", Nature);
+
+    const q = query(
+      collection(db, "priceCard"),
+      where("timberType", "==", TreeType),
+      where("timberNature", "==", Nature),
+      orderBy("categoryNumber", "desc")
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      console.log("No Category.");
+      return []; // ✅ return empty array
+    }
+
+    const priceCardList = [];
+    querySnapshot.forEach((doc) => {
+      priceCardList.push({ id: doc.id, ...doc.data() });
+    });
+
+    return priceCardList;
+  } catch (error) {
+    console.error("Error fetching categories by type & nature:", error);
+    throw error;
+  }
+};
+
 // Update category
 export const updateCategory = async (categoryId, categoryData ) => {
     console.log("categoryData:",categoryData)

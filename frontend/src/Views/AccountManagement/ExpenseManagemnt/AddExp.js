@@ -31,6 +31,7 @@ const AddExp = () => {
   });
 
   const [expenseTypes, setExpenseTypes] = useState([]); // State to store the fetched expense types
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ prevent double submit
 
   // Fetch expense types on component mount
   useEffect(() => {
@@ -55,6 +56,11 @@ const AddExp = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+        // ✅ block double click
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       const ExpensesId = await newExpense(formData);
       console.log("New Expenses ID:", ExpensesId);
@@ -87,6 +93,8 @@ const AddExp = () => {
       window.location.href = "/exp";
     } catch (error) {
       console.error("Error creating Expenses:", error.message);
+    }finally {
+      setIsSubmitting(false); // ✅ always re-enable
     }
   };
 
@@ -114,6 +122,8 @@ const AddExp = () => {
                 label="Date"
                 type="date"
                 name="date"
+                disabled={isSubmitting} // ✅ disable while submitting
+                required
                 value={formData.date}
                 onChange={handleChange}
                 InputLabelProps={{
@@ -129,6 +139,8 @@ const AddExp = () => {
                 <Select
                   name="type"
                   value={formData.type}
+                  disabled={isSubmitting} // ✅ disable while submitting
+                  required
                   onChange={handleChange}
                   label="Type"
                 >
@@ -145,6 +157,8 @@ const AddExp = () => {
                 label="Description"
                 name="des"
                 value={formData.des}
+                disabled={isSubmitting} // ✅ disable while submitting
+                required
                 onChange={handleChange}
                 fullWidth
                 sx={{ mt: 2 }}
@@ -154,6 +168,8 @@ const AddExp = () => {
               <TextField
                 label="Amount"
                 name="amount"
+                disabled={isSubmitting} // ✅ disable while submitting
+                required
                 value={formData.amount}
                 onChange={handleChange}
                 fullWidth
@@ -171,8 +187,8 @@ const AddExp = () => {
                 alignItems: "flex-end",
               }}
             >
-              <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }}>
-                Create
+              <Button type="submit" variant="contained" sx={{ color: "#ffffff" }} disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create"}
               </Button>
             </Grid>
           </Grid>

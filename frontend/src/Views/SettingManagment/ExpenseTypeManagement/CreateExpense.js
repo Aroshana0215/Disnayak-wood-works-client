@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 
 const CreateExpenseType = () => {
   const { user } = useSelector((state) => state.auth);
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ prevent double submit
 
   let currentDate = new Date();
   let year = currentDate.getFullYear();
@@ -63,6 +64,10 @@ const CreateExpenseType = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    // ✅ block double click
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     
     const validationResult = await validateInputs();
     
@@ -80,6 +85,8 @@ const CreateExpenseType = () => {
       window.location.href = "/setting/expenseType";
     } catch (error) {
       console.error("Error creating expense type:", error.message);
+    }finally {
+      setIsSubmitting(false); // ✅ always re-enable
     }
   };
 
@@ -121,7 +128,9 @@ const CreateExpenseType = () => {
                   onChange={handleChange}
                   variant="outlined"
                   fullWidth
+                  required
                   placeholder="Enter type name"
+                  disabled={isSubmitting} // ✅ disable while submitting
                   sx={{ mt: 2 }}
                   error={!!errors.typeName}
                   helperText={errors.typeName}
@@ -142,6 +151,8 @@ const CreateExpenseType = () => {
                   fullWidth
                   multiline
                   rows={4}
+                  disabled={isSubmitting} // ✅ disable while submitting
+                  required
                   placeholder="Enter description"
                   sx={{ mt: 2 }}
                   error={!!errors.description}
@@ -158,8 +169,8 @@ const CreateExpenseType = () => {
                 justifyContent: "flex-end",
               }}
             >
-              <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }}>
-                Create
+              <Button type="submit" variant="contained" sx={{ color: "#fefefe" }} disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create"}
               </Button>
             </Grid>
           </Grid>

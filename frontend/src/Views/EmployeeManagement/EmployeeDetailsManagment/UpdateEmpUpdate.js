@@ -34,8 +34,7 @@ const toInputDate = (value) => {
 const isValidDaySalary = (value) => {
   if (value === null || value === undefined) return false;
   if (String(value).trim() === "") return false;
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0;
+  return value > 0;
 };
 
 const UpdateEmpUpdate = () => {

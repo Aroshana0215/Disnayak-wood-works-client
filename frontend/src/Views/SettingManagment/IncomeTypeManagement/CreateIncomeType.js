@@ -158,7 +158,7 @@ const CreateIncomeType = () => {
                 justifyContent: "flex-end",
               }}
             >
-              <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }}>
+              <Button type="submit" variant="contained" sx={{ color: "#f4f2f1" }}>
                 Create
               </Button>
             </Grid>

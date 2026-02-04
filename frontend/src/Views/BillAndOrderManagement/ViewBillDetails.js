@@ -85,8 +85,8 @@ const ViewBillDetails = () => {
     description: { editable: false, bpMD: 6 },
   });
   const columns = [
-    { field: "categoryId_fk", headerName: "Category ID", width: 120 },
-    { field: "timberType", headerName: "Timber Type", width: 120 },
+    { field: "categoryId_fk", headerName: "Category", width: 110 },
+    { field: "timberType", headerName: "Timber Type", width: 110 },
     { field: "timberNature", headerName: "Nature", width: 150 },
     {
       field: "dimensions",
@@ -96,23 +96,23 @@ const ViewBillDetails = () => {
         return `${row.areaLength} x ${row.areaWidth}`;
       },
     },
-    { field: "woodLength", headerName: "Length", width: 150 },
+    { field: "woodLength", headerName: "Length", width: 110 },
     {
       field: "availablePiecesAmount",
-      headerName: "Available Amount",
-      width: 120,
+      headerName: "Available",
+      width: 110,
     },
     {
       field: "neededPiecesAmount",
-      headerName: "Needed Amount",
-      width: 120,
+      headerName: "Needed",
+      width: 110,
     },
-    { field: "unitPrice", headerName: "Unit Price", width: 120 },
-    { field: "discountPrice", headerName: "Discount Price", width: 120 },
+    { field: "unitPrice", headerName: "Unit Price", width: 110 },
+    { field: "discountPrice", headerName: "Discount", width: 110 },
     {
       field: "actions",
       headerName: "Actions",
-      width: 200,
+      width: 150,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           {params.row.isComplete == false && categoryData.billStatus == "ORDER" &&(
@@ -188,7 +188,7 @@ const ViewBillDetails = () => {
                 changedAmount: tobeCompleteAmount,
                 previousAmount: activeData.totalPieces,
                 categoryId_fk: activeData.categoryId_fk,
-                maxlength : catogoryDatat.minlength,
+                maxlength : catogoryDatat.maxlength,
                 minlength : catogoryDatat.minlength,
                 timberNature : catogoryDatat.timberNature,
                 timberType : catogoryDatat.timberType,
@@ -196,9 +196,9 @@ const ViewBillDetails = () => {
                 areaWidth : catogoryDatat.areaWidth,
                 length: activeData.length,
                 toBeCutAmount: Number(activeData.toBeCutAmount) - Number(tobeCompleteAmount),
-                stk_id_fk: "completedOrder",
+                stk_id_fk: "CO",
                 status: "A",
-                billId_fk: "completedOrder",
+                billId_fk: billId,
                 createdBy: user.displayName,
                 createdDate: currentDateTime
               };
@@ -229,7 +229,7 @@ const ViewBillDetails = () => {
     };
   
     completeTimberStock();
-  }, [complete, tobeCompleteAmount, woodLength, categoryId]);
+  }, [complete, tobeCompleteAmount, woodLength, categoryId, billId]);
   
 
 

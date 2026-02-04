@@ -31,6 +31,7 @@ const CreateNewStock = () => {
   const month = ("0" + (currentDate.getMonth() + 1)).slice(-2);
   const day = ("0" + currentDate.getDate()).slice(-2);
   const formattedDate = `${year}-${month}-${day}`;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // (Kept to avoid breaking anything if used elsewhere later)
   const [formData, setFormData] = useState({
@@ -130,6 +131,10 @@ const CreateNewStock = () => {
   };
 
   const handleSubmit = async (event) => {
+    // ✅ block double click
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     event.preventDefault();
 
     try {
@@ -156,7 +161,10 @@ const CreateNewStock = () => {
             stockData.length
           );
 
+          console.log("resultData:",resultData);
+
           if (resultData == null) {
+                      console.log("Create new stock:");
             const stockSumData = {
               totalPieces: stockData.amountOfPieces,
               changedAmount: stockData.amountOfPieces,
@@ -181,7 +189,7 @@ const CreateNewStock = () => {
           } else {
             const stockUpdateData = { status: "D" };
             await updateStockSummaryDetails(resultData.id, stockUpdateData);
-
+                      console.log("Update stock:");
             const stockSumData = {
               totalPieces: Number(resultData.totalPieces) + Number(stockData.amountOfPieces),
               changedAmount: stockData.amountOfPieces,
@@ -210,6 +218,8 @@ const CreateNewStock = () => {
       window.location.href = "/activeStock";
     } catch (error) {
       console.error("Error creating category:", error.message);
+    }finally {
+      setIsSubmitting(false); // ✅ always re-enable
     }
   };
 
@@ -248,7 +258,7 @@ const CreateNewStock = () => {
                     <IconButton
                       color="error"
                       onClick={() => removeRow(index)}
-                      disabled={payloadBulk.length === 1}
+                      disabled={payloadBulk.length === 1 || isSubmitting}
                     >
                       <HighlightOffIcon />
                     </IconButton>
@@ -264,6 +274,7 @@ const CreateNewStock = () => {
                       label="Category"
                       name="categoryId_fk"
                       value={row.categoryId_fk}
+                      disabled={isSubmitting}
                       onChange={(event) => handleInputChange(index, event)}
                     >
                       {categories.map((cat) => {
@@ -288,6 +299,7 @@ const CreateNewStock = () => {
                       label="Timber Length"
                       name="length"
                       value={row.length}
+                      disabled={isSubmitting}
                       onChange={(event) => handleInputChange(index, event)}
                     >
                       {lengthOptions.map((len) => (
@@ -310,6 +322,7 @@ const CreateNewStock = () => {
                     fullWidth
                     required
                     type="number"
+                    disabled={isSubmitting}
                     inputProps={{ min: 1, max: 20, step: 1 }}
                   />
                 </Grid>
@@ -324,6 +337,7 @@ const CreateNewStock = () => {
                     onChange={(event) => handleInputChange(index, event)}
                     fullWidth
                     required
+                    disabled={isSubmitting}
                     type="number"
                     inputProps={{ min: 1 }}
                   />
@@ -350,8 +364,8 @@ const CreateNewStock = () => {
               alignItems: "flex-end",
             }}
           >
-            <Button type="submit" variant="contained">
-              create
+            <Button type="submit" variant="contained" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create"}
             </Button>
           </Grid>
         </Grid>

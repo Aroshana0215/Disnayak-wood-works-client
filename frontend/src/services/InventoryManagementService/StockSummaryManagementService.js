@@ -14,13 +14,19 @@ const db = getFirestore();
 
 // Insert new order for price Card List
 export const createStockSummary = async (stockData) => {
-  console.log("stockData:",stockData);
   try {
-    const docRef = await addDoc(collection(db, "inventorySummary"), stockData);
-    console.log("sucessfully created inventory details: ");
+    const payload = {
+      ...stockData,
+      length:
+        stockData?.length === undefined || stockData?.length === null
+          ? ""
+          : String(stockData.length).trim(),
+    };
+
+    const docRef = await addDoc(collection(db, "inventorySummary"), payload);
     return docRef.id;
   } catch (error) {
-    console.error("Error Entering inventory details ", error.message);
+    console.error("Error Entering inventory details", error.message);
     throw error;
   }
 };

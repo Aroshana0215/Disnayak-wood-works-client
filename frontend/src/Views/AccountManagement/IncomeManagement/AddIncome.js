@@ -21,6 +21,7 @@ import { getAllActiveIncomeType } from "../../../services/SettingManagementServi
 
 const AddIncome = () => {
   const { user } = useSelector((state) => state.auth);
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ prevent double submit
 
   const [formData, setFormData] = useState({
     date: "",
@@ -61,6 +62,10 @@ const AddIncome = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       let formattedFormData = {
         ...formData,
@@ -99,6 +104,8 @@ const AddIncome = () => {
       window.location.href = "/income";
     } catch (error) {
       console.error("Error creating income:", error.message);
+    }finally {
+      setIsSubmitting(false); // ✅ always re-enable
     }
   };
 
@@ -135,7 +142,9 @@ const AddIncome = () => {
                         name={key}
                         value={value}
                         onChange={handleChange}
+                        required
                         variant="outlined"
+                        disabled={isSubmitting} // ✅ disable while submitting
                         fullWidth
                       >
                         {incomeTypes.map((type) => (
@@ -151,6 +160,8 @@ const AddIncome = () => {
                       value={value}
                       onChange={handleChange}
                       variant="outlined"
+                      disabled={isSubmitting} // ✅ disable while submitting
+                      required
                       fullWidth
                       type={key === "date" ? "date" : "text"}
                       InputLabelProps={{
@@ -173,7 +184,7 @@ const AddIncome = () => {
                 alignItems: "flex-end",
               }}
             >
-              <Button type="submit" variant="contained" sx={{ color: "#9C6B3D" }}>
+              <Button type="submit" variant="contained" sx={{ color: "#fdfdfd" }}>
                 Create
               </Button>
             </Grid>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Grid,
   Typography,
@@ -10,18 +10,21 @@ import {
   Select,
   MenuItem,
   InputLabel,
+  Paper,
+  Box,
+  Divider,
+  Chip,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { DataGrid } from "@mui/x-data-grid";
-import {
-  newBill,
-  getbillDetailsById,
-} from "../../services/BillAndOrderService/BilllManagemntService";
+import { ToastContainer, toast } from "react-toastify";
+
+import { newBill } from "../../services/BillAndOrderService/BilllManagemntService";
 import {
   createStockSummary,
   updateStockSummaryDetails,
-  getStockSummaryById
+  getStockSummaryById,
 } from "../../services/InventoryManagementService/StockSummaryManagementService";
 import { createOrder } from "../../services/BillAndOrderService/OrderManagmentService";
 import { newIncome } from "../../services/AccountManagementService/IncomeManagmentService";
@@ -31,32 +34,27 @@ import {
   getActiveAccountSummaryDetails,
 } from "../../services/AccountManagementService/AccountSummaryManagmentService";
 import { getCategoryById } from "../../services/PriceCardService";
-import { ToastContainer, toast } from "react-toastify";
-import {createbillAdvance } from "../../services/BillAndOrderService/BilllAdvanceService";
+import { createbillAdvance } from "../../services/BillAndOrderService/BilllAdvanceService";
+
+const brand = { brown: "#9C6B3D" };
 
 const CreateNewBill = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { woodData } = location.state;
-  console.log("woodData:",woodData);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useSelector((state) => state.auth);
-  const currentDate = new Date();
-  const currentDateTime = currentDate.toISOString();
 
-  let year = currentDate.getFullYear();
-  let month = ("0" + (currentDate.getMonth() + 1)).slice(-2); // Months are zero-based
-  let day = ("0" + currentDate.getDate()).slice(-2);
-  let formattedDate = `${year}-${month}-${day}`;
+  const currentDate = useMemo(() => new Date(), []);
+  const currentDateTime = useMemo(() => currentDate.toISOString(), [currentDate]);
 
-  // Calculate total amount and remaining amount from wood data
-  const calculateTotals = (advance) => {
-    const totalAmount = woodData.reduce(
-      (sum, wood) => sum + Number(wood.amount) * Number(wood.billPrice),
-      0
-    );
-    const remainningAmount = totalAmount - Number(advance || 0);
-    return { totalAmount, remainningAmount };
-  };
+  const formattedDate = useMemo(() => {
+    const y = currentDate.getFullYear();
+    const m = String(currentDate.getMonth() + 1).padStart(2, "0");
+    const d = String(currentDate.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }, [currentDate]);
 
   const [formData, setFormData] = useState({
     cusName: "",
@@ -68,159 +66,157 @@ const CreateNewBill = () => {
     remainningAmount: 0,
     PromizeDate: "",
     description: "",
-    billStatus: "", // Default empty, to be updated with dropdown value
+    billStatus: "",
   });
 
-  // Update totalAmount and remainningAmount when woodData or advance changes
+  const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
+  const getTotalLengthResult = (row) => {
+    const length = Number(row.requestLength || 0);
+    const width = Number(row.width || 0);
+    const amount = Number(row.amount || 0);
+
+    if (row.natureName === "Block" || row.natureName === "Blocks") return round2(length * amount);
+
+    if (row.natureName === "Planks" || row.natureName === "Plank") {
+      if (width > 9) return round2(length * amount);
+      return round2(((length * width) / 12) * amount);
+    }
+
+    return round2(length * amount);
+  };
+
+  const getRowTotal = (wood) => {
+    const nature = (wood.natureName || "").toLowerCase();
+    const length = Number(wood.requestLength || 0);
+    const width = Number(wood.width || 0);
+    const amount = Number(wood.amount || 0);
+    const billPrice = Number(wood.billPrice || 0);
+
+    if (nature === "block" || nature === "blocks") return round2(length * amount * billPrice);
+
+    if (nature === "plank" || nature === "planks") {
+      if (width > 9) return round2(length * amount * billPrice);
+      const sqFeet = (length * width) / 12;
+      return round2(sqFeet * amount * billPrice);
+    }
+
+    return round2(amount * billPrice);
+  };
+
+  const calculateTotals = (advance) => {
+    const totalAmount = woodData.reduce((sum, wood) => sum + getRowTotal(wood), 0);
+    const remainningAmount = totalAmount - Number(advance || 0);
+    return { totalAmount: round2(totalAmount), remainningAmount: round2(remainningAmount) };
+  };
+
   useEffect(() => {
     const { totalAmount, remainningAmount } = calculateTotals(formData.advance);
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      totalAmount,
-      remainningAmount,
-    }));
+    setFormData((prev) => ({ ...prev, totalAmount, remainningAmount }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [woodData, formData.advance]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const validateBillInputs = (woodData,formData) => {
+  const validateBillInputs = (woodDataArg, formDataArg) => {
     let status = false;
-    
-    if(!formData.cusName || formData.cusName === ""){
+
+    if (!formDataArg.cusName) {
       toast.error("Customer Name required");
       status = true;
-    }else{
-      if(!formData.cusAddress || formData.cusAddress === ""){
-        toast.error("Customer Address required");
+    } else if (!formDataArg.cusAddress) {
+      toast.error("Customer Address required");
+      status = true;
+    } else if (!formDataArg.cusNIC) {
+      toast.error("NIC required");
+      status = true;
+    } else if (!formDataArg.cusPhoneNumber) {
+      toast.error("Customer Phone Number required");
+      status = true;
+    } else if (formDataArg.totalAmount === "" || formDataArg.totalAmount === null) {
+      toast.error("Total amount required");
+      status = true;
+    } else if (formDataArg.remainningAmount === "" || formDataArg.remainningAmount === null) {
+      toast.error("Remaining amount required");
+      status = true;
+    } else if (!formDataArg.PromizeDate) {
+      toast.error("Promized date required");
+      status = true;
+    } else if (!formDataArg.billStatus) {
+      toast.error("Status required");
+      status = true;
+    }
+
+    if (formDataArg.billStatus === "COMPLETE" && Number(formDataArg.advance) > 0) {
+      toast.error("Cannot have advance for Complete bill !!");
+      status = true;
+    }
+
+    for (const wood of woodDataArg) {
+      if (formDataArg.billStatus !== "ORDER" && Number(wood.toBeCut) > 0) {
+        toast.error("No stock for timber!!");
         status = true;
-      }else{
-        if(!formData.cusNIC || formData.cusNIC === ""){
-          toast.error("NIC required");
-          status = true;
-        }else{
-          if(!formData.cusPhoneNumber || formData.cusPhoneNumber === ""){
-            toast.error("Customer Phone Number required");
-            status = true;
-          }else{
-            if(!formData.totalAmount || formData.totalAmount === ""){
-              toast.error("Total amount required");
-              status = true;
-            }else{
-                if(!formData.remainningAmount || formData.remainningAmount === ""){
-                  toast.error("Remaining amount required");
-                  status = true;
-                }else{
-                  if(!formData.PromizeDate || formData.PromizeDate === ""){
-                    toast.error("Promized date required");
-                    status = true;
-                  }else{
-                    if(!formData.billStatus || formData.billStatus === ""){
-                      toast.error("Status required");
-                      status = true;
-                    }
-                  }
-                }
-            }
-          }
-        }          
       }
     }
 
-    if(formData.billStatus == "COMPLETE"){
-      if (formData.advance > 0) {
-        toast.error("Cannot have advance for Complete bill !!",);
-        status = true;
-      }   
-    }
-
-    for (const wood of woodData) {
-      if(formData.billStatus != "ORDER"){
-        if (wood.toBeCut > 0) {
-          toast.error("No stock for timber!!",);
-          status = true;
-        }   
-      }
-    }
-
-    // if(formData.billStatus == "ORDER" || formData.billStatus == "ORDER" ){
-    //   if(formData.advance < 1){
-    //     toast.error("advance amount should be greater than 0 for ORDER");
-    //     status = true;
-    //   }
-    // } 
-
-            return status;
+    return status;
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-  
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       const result = validateBillInputs(woodData, formData);
-      if (result) {
-        console.error("Input Validation Error");
-        return;
-      }
-  
+      if (result) return;
+
       const formattedData = {
         ...formData,
         dateAndTime: currentDateTime,
         status: "A",
         createdBy: user.displayName,
-        createdDate: currentDateTime
+        createdDate: currentDateTime,
       };
-  
-      console.log("woodData:", woodData);
-      const bill = await newBill(formattedData);
-  
-      if (bill != null) {
 
-        if(formData.advance > 0){
-          const payLoad = {
+      const bill = await newBill(formattedData);
+
+      if (bill != null) {
+        if (Number(formData.advance) > 0) {
+          await createbillAdvance({
             amount: formData.advance,
             description: "Initial Advance",
             date: formattedDate,
-            BillId : bill.id, 
+            BillId: bill.id,
             status: "A",
             createdBy: user.displayName,
             createdDate: formattedDate,
-          }
-         const advanceId = await createbillAdvance(payLoad);
+          });
         }
-      
+
         for (const wood of woodData) {
-          if (formData.billStatus != "ORDER") {
+          if (formData.billStatus !== "ORDER") {
             const data = await getStockSummaryById(wood.summaryId);
-            if (!data) {
-              console.error("No data for stock summaryId:", wood.summaryId);
-              continue;
-            }
-  
-            const stockUpdateData = {
+            if (!data) continue;
+
+            await updateStockSummaryDetails(data.id, {
               status: "D",
               modifiedBy: user.displayName,
-              modifiedDate: currentDateTime
-            };
-            await updateStockSummaryDetails(data.id, stockUpdateData);
-  
+              modifiedDate: currentDateTime,
+            });
+
             const categoryData = await getCategoryById(data.categoryId_fk);
-            if (!categoryData) {
-              console.error("Invalid category:", data.categoryId_fk);
-              continue;
-            }
-  
-            const stockSummaryData = {
+            if (!categoryData) continue;
+
+            await createStockSummary({
               totalPieces: wood.totalPieces - wood.amount,
               changedAmount: wood.amount,
               previousAmount: wood.totalPieces,
               categoryId_fk: wood.categoryId_fk,
-              maxlength: categoryData.minlength,
+              maxlength: categoryData.maxlength,
               minlength: categoryData.minlength,
               timberNature: categoryData.timberNature,
               timberType: categoryData.timberType,
@@ -232,85 +228,60 @@ const CreateNewBill = () => {
               status: "A",
               billId_fk: bill.id,
               createdBy: user.displayName,
-              createdDate: currentDateTime
-            };
-            await createStockSummary(stockSummaryData);
-  
+              createdDate: currentDateTime,
+            });
           } else {
-
             const data = await getStockSummaryById(wood.summaryId);
-            if (!data) {
-              console.error("No data for stock summaryId:", wood.summaryId);
-              continue;
-            }
+            if (!data) continue;
 
-              const stockUpdateData = {
-                toBeCutAmount: wood.amount,
-                modifiedBy: user.displayName,
-                modifiedDate: currentDateTime
-              };
-              await updateStockSummaryDetails(data.id, stockUpdateData);
-
+            await updateStockSummaryDetails(data.id, {
+              toBeCutAmount: wood.amount,
+              modifiedBy: user.displayName,
+              modifiedDate: currentDateTime,
+            });
           }
 
-  
-          const saveOrderData = {
+          await createOrder({
             discountPrice: wood.billPrice || 0,
             categoryId_fk: wood.categoryId_fk || 0,
             availablePiecesAmount: wood.totalPieces || 0,
             neededPiecesAmount: wood.amount || 0,
             tobeCut: wood.toBeCut,
             woodLength: wood.requestLength,
-            isComplete: formData.billStatus == "ORDER" ? false : true,
+            isComplete: formData.billStatus === "ORDER" ? false : true,
             status: "A",
             billId_fk: bill.id,
             createdBy: user.displayName,
-            createdDate: currentDateTime
-          };
-          await createOrder(saveOrderData);
-          
+            createdDate: currentDateTime,
+          });
         }
-  
+
         if (formData.billStatus !== "INTERNAL") {
-
           let incomeAmount = 0;
+          if (formData.billStatus === "COMPLETE") incomeAmount = formData.totalAmount;
+          else if (Number(formData.advance) > 0) incomeAmount = formData.advance;
 
-          if(formData.billStatus === "COMPLETE"){
-            incomeAmount = formData.totalAmount;
-  
-          }else
-          {
-            if(formData.advance > 0){
-                incomeAmount = formData.advance;
-            }else{
-                incomeAmount = incomeAmount; 
-            }
-          }
-
-          const saveIncomeData = {
+          const incomeId = await newIncome({
             date: currentDateTime,
             type: `${formData.billStatus}-Bill`,
             des: "Nothing",
-            amount:  incomeAmount,
+            amount: incomeAmount,
             BilId: bill.billID || "",
             status: "A",
             createdBy: user.displayName,
-            createdDate: currentDateTime
-          };
-          const incomeId = await newIncome(saveIncomeData);
-  
+            createdDate: currentDateTime,
+          });
+
           if (incomeId) {
             const data = await getActiveAccountSummaryDetails();
-  
             if (data) {
-              const accountSummaryData = {
+              await updateAccountSummary(data.id, {
                 status: "D",
                 modifiedBy: user.displayName,
-                modifiedDate: currentDateTime
-              };
-              await updateAccountSummary(data.id, accountSummaryData);
-  
-              const newAccountSummaryData = {
+                modifiedDate: currentDateTime,
+              });
+
+              await newAccountSummary({
                 totalAmount: Number(data.totalAmount) + Number(formData.totalAmount),
                 changedAmount: formData.totalAmount,
                 previousAmount: data.totalAmount,
@@ -318,163 +289,376 @@ const CreateNewBill = () => {
                 incId_fk: incomeId,
                 status: "A",
                 createdBy: user.displayName,
-                createdDate: currentDateTime
-              };
-              await newAccountSummary(newAccountSummaryData);
+                createdDate: currentDateTime,
+              });
             }
           }
         }
       }
-  
+
       navigate(`/bill/view/${bill.id}`);
     } catch (error) {
-      console.error("Error creating bill:", error.message);
+      console.error("Error creating bill:", error?.message || error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
 
-  const columns = [
-    { field: "id", headerName: "ID", width: 90 },
-    {
-      field: "Timber Type",
-      headerName: "Timber Type",
-      width: 130,
-      renderCell: ({ row }) => {
-        return `${row.timberType} - ${row.length} x ${row.width}`;
+  const columns = useMemo(
+    () => [
+      { field: "categoryId", headerName: "ID", width: 110 },
+      {
+        field: "TreeType",
+        headerName: "Tree Type",
+        width: 170,
+        renderCell: ({ row }) => `${row.timberType}-${row.natureName}`,
       },
-    },
-    { field: "requestLength", headerName: "Length", width: 150 },
-    { field: "totalPieces", headerName: "Total Pieces", width: 150 },
-    { field: "unitPrice", headerName: "Unit Price", width: 150 },
-    { field: "amount", headerName: "Amount", width: 150 },
-    { field: "toBeCut", headerName: "To Be Cut", width: 150 },
-    { field: "billPrice", headerName: "Bill Price", width: 150 },
-    { field: "total", headerName: "Total", width: 150 },
-  ];
+      {
+        field: "diamention",
+        headerName: "Dimension",
+        width: 140,
+        renderCell: ({ row }) => `${row.length} x ${row.width}`,
+      },
+      { field: "requestLength", headerName: "Length", width: 95 },
+      { field: "totalPieces", headerName: "Stock", width: 90 },
+      { field: "unitPrice", headerName: "Unit Price", width: 110 },
+      { field: "amount", headerName: "Amount", width: 90 },
+      { field: "toBeCut", headerName: "To Be Cut", width: 100 },
+      {
+        field: "TotalLength",
+        headerName: "TotalLength",
+        width: 120,
+        renderCell: ({ row }) => getTotalLengthResult(row).toFixed(2),
+      },
+      { field: "billPrice", headerName: "Bill Price", width: 110 },
+      { field: "total", headerName: "Total", width: 120 },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
-  const rows = woodData.map((wood, index) => ({
-    id: index + 1,
-    ...wood,
-    total: Number(wood.amount) * Number(wood.billPrice),
-  }));
+  const rows = useMemo(
+    () =>
+      woodData.map((wood, index) => ({
+        id: index + 1,
+        ...wood,
+        total: getRowTotal(wood),
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [woodData]
+  );
+
+  const summary = useMemo(() => {
+    const count = woodData.length;
+    const outOfStock = woodData.filter((w) => Number(w.toBeCut) > 0).length;
+    return { count, outOfStock };
+  }, [woodData]);
 
   return (
     <>
-      <Grid
-        container
-        direction="row"
-        justifyContent="center"
-        alignItems="stretch"
-      >
-        <Grid item xs={12}>
-          <Grid
-            container
-            padding={2}
+      <ToastContainer />
+
+      <Box sx={{ p: { xs: 1.5, md: 2 } }}>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            overflow: "hidden",
+          }}
+        >
+          {/* Header */}
+          <Box
             sx={{
-              bgcolor: "background.default",
-              borderRadius: 2,
+              px: 2,
+              py: 1.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              bgcolor: "background.paper",
             }}
           >
-            <Grid item xs={12} padding={1}>
-              <Stack
-                direction="row"
-                justifyContent="flex-start"
-                alignItems="center"
-                spacing={2}
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 900,
+                  letterSpacing: 0.2,
+                  color: brand.brown,
+                }}
               >
-                <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
-                  Create a new bill
-                </Typography>
-              </Stack>
-            </Grid>
-            <Grid item xs={12}>
-              <form onSubmit={handleSubmit}>
-                <Grid container>
-                  <Grid item xs={12} p={1}>
-                    <Typography variant="h6">Customer Data</Typography>
-                  </Grid>
-                  {Object.entries(formData).map(([key, value]) => (
-                    <Grid key={key} item xs={12} md={4} p={1}>
-                      <FormControl
-                        fullWidth
-                        sx={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <FormLabel>
-                          {key.charAt(0).toUpperCase() +
-                            key.slice(1).replace(/([A-Z])/g, " $1")}
-                        </FormLabel>
-                        {key === "billStatus" ? (
-                          <FormControl fullWidth sx={{ minWidth: 120 }}>
-                            <InputLabel>Bill Status</InputLabel>
-                            <Select
-                              name={key}
-                              value={value}
-                              onChange={handleChange}
-                              size="small"
-                              sx={{
-                                height: 40, // Adjust height to match OutlinedInput (same as other fields)
-                                width : 250,
-                              }}
-                            >
-                              <MenuItem value="ORDER">ORDER</MenuItem>
-                              <MenuItem value="COMPLETE">COMPLETE</MenuItem>
-                              <MenuItem value="INTERNAL">INTERNAL</MenuItem>
-                            </Select>
-                          </FormControl>
-                        ) : (
-                          <OutlinedInput
-                            size="small"
-                            name={key}
-                            value={value}
-                            onChange={handleChange}
-                            readOnly={key === "totalAmount" || key === "remainningAmount"} // Make fields read-only
-                            sx={{ height: 40 }} // Ensure height consistency for text input fields
-                          />
-                        )}
+                Create a New Bill
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Fill customer details, then review wood items and save.
+              </Typography>
+            </Box>
 
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip size="small" label={`${summary.count} item(s)`} variant="outlined" />
+              {summary.outOfStock > 0 ? (
+                <Chip size="small" color="warning" label={`${summary.outOfStock} need cut`} />
+              ) : (
+                <Chip size="small" color="success" variant="outlined" label="All in stock" />
+              )}
+            </Stack>
+          </Box>
 
+          <Divider />
+
+          {/* ✅ Vertical layout: Customer -> Wood Items -> Actions */}
+          <Box component="form" onSubmit={handleSubmit} sx={{ p: 2 }}>
+            <Grid container spacing={2}>
+              {/* Customer Details */}
+              <Grid item xs={12}>
+                <Paper
+                  variant="outlined"
+                  sx={{ borderRadius: 2, p: 2, bgcolor: "background.paper" }}
+                >
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
+                      Customer Details
+                    </Typography>
+                    <Chip size="small" label="Required" variant="outlined" />
+                  </Stack>
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Grid container spacing={1.5}>
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Customer Name</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="cusName"
+                          value={formData.cusName}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          sx={{ mt: 0.5 }}
+                        />
                       </FormControl>
                     </Grid>
-                  ))}
-                  <Grid item xs={12} p={1}>
-                    <Typography variant="h6">Wood Data</Typography>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Customer Address</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="cusAddress"
+                          value={formData.cusAddress}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          sx={{ mt: 0.5 }}
+                        />
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Customer NIC</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="cusNIC"
+                          value={formData.cusNIC}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          sx={{ mt: 0.5 }}
+                        />
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Phone Number</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="cusPhoneNumber"
+                          value={formData.cusPhoneNumber}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          sx={{ mt: 0.5 }}
+                        />
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Total Amount</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="totalAmount"
+                          value={formData.totalAmount}
+                          readOnly
+                          sx={{
+                            mt: 0.5,
+                            bgcolor: "rgba(0,0,0,0.03)",
+                            fontWeight: 800,
+                          }}
+                        />
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Advance</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="advance"
+                          value={formData.advance}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          sx={{ mt: 0.5 }}
+                        />
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Remaining Amount</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="remainningAmount"
+                          value={formData.remainningAmount}
+                          readOnly
+                          sx={{
+                            mt: 0.5,
+                            bgcolor: "rgba(0,0,0,0.03)",
+                            fontWeight: 800,
+                          }}
+                        />
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Promize Date</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="PromizeDate"
+                          value={formData.PromizeDate}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          sx={{ mt: 0.5 }}
+                        />
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Description</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="description"
+                          value={formData.description}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          sx={{ mt: 0.5 }}
+                        />
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth sx={{ mt: 0.5 }}>
+                        <InputLabel>Bill Status</InputLabel>
+                        <Select
+                          name="billStatus"
+                          value={formData.billStatus}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          size="small"
+                          label="Bill Status"
+                        >
+                          <MenuItem value="ORDER">ORDER</MenuItem>
+                          <MenuItem value="COMPLETE">COMPLETE</MenuItem>
+                          <MenuItem value="INTERNAL">INTERNAL</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12} p={1}>
+                </Paper>
+              </Grid>
+
+              {/* Wood Items */}
+              <Grid item xs={12}>
+                <Paper
+                  variant="outlined"
+                  sx={{ borderRadius: 2, p: 2, bgcolor: "background.paper" }}
+                >
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
+                      Wood Items
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label="Scroll to view all"
+                      variant="outlined"
+                      sx={{ borderColor: "rgba(156,107,61,0.35)" }}
+                    />
+                  </Stack>
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Box sx={{ width: "100%", height: 460 }}>
                     <DataGrid
                       rows={rows}
                       columns={columns}
-                      pageSize={5}
-                      rowsPerPageOptions={[5]}
+                      pageSize={100}
+                      rowsPerPageOptions={[100]}
+                      disableRowSelectionOnClick
+                      sx={{
+                        border: 0,
+                        "& .MuiDataGrid-columnHeaders": {
+                          bgcolor: "rgba(0,0,0,0.02)",
+                          borderBottom: "1px solid rgba(0,0,0,0.08)",
+                        },
+                        "& .MuiDataGrid-row:hover": { bgcolor: "rgba(156,107,61,0.06)" },
+                      }}
                     />
-                  </Grid>
-                  <Grid item xs={12} p={1}>
-                    <Stack direction="row" spacing={2} justifyContent="flex-end">
-                      <Button
-                        variant="contained"
-                        type="submit"
-                        sx={{ color: "#9C6B3D" }}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="secondary"
-                        onClick={() => navigate("/bill")}
-                      >
-                        Cancel
-                      </Button>
-                    </Stack>
-                  </Grid>
-                </Grid>
-              </form>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* Actions */}
+              <Grid item xs={12}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    borderRadius: 2,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    p: 1.5,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                    bgcolor: "background.paper",
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={() => navigate("/bill")}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    disabled={isSubmitting}
+                    sx={{
+                      bgcolor: brand.brown,
+                      "&:hover": { bgcolor: "#855A35" },
+                      px: 3,
+                    }}
+                  >
+                    {isSubmitting ? "Saving..." : "Save Bill"}
+                  </Button>
+                </Paper>
+              </Grid>
             </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
+          </Box>
+        </Paper>
+      </Box>
     </>
   );
 };

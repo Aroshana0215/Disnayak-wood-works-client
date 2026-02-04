@@ -29,11 +29,13 @@ const CreateCategory = () => {
   const day = ("0" + currentDate.getDate()).slice(-2);
   const formattedDate = `${year}-${month}-${day}`;
 
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ prevent double submit
+
   const [isplank, setIsplank] = useState(false);
   const [isTimberDust, setIsTimberDust] = useState(false);
   const [isLumber, setisLumber] = useState(false);
   const [isWoodwork, setIsWoodwork] = useState(false);
-  const [isBlockMould, setIsBlockMould] = useState(false)
+  const [isBlockMould, setIsBlockMould] = useState(false);
 
   const [treeTypes, setTreeTypes] = useState([]);
   const [timberNature, setTimberNature] = useState([]);
@@ -90,6 +92,7 @@ const CreateCategory = () => {
         // ✅ flags
         setIsWoodwork(value === "Woodwork");
         setIsBlockMould(value === "BlockMould");
+
         if (value === "Planks") {
           setIsplank(true);
           setIsTimberDust(false);
@@ -106,6 +109,11 @@ const CreateCategory = () => {
 
         // ✅ When Woodwork -> set min/max to 0 (and UI will be disabled)
         if (value === "Woodwork") {
+          next.minlength = 0;
+          next.maxlength = 0;
+        }
+        // ✅ When BlockMould -> set min/max to 0 (and UI will be disabled)
+        if (value === "BlockMould") {
           next.minlength = 0;
           next.maxlength = 0;
         }
@@ -135,6 +143,10 @@ const CreateCategory = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    // ✅ block double click
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const requiredFields = [
       { name: "timberType", label: "Timber Type" },
       { name: "timberNature", label: "Timber Nature" },
@@ -145,41 +157,47 @@ const CreateCategory = () => {
       { name: "unitPrice", label: "Unit Price" },
     ];
 
-    for (const field of requiredFields) {
-      // ✅ Dust: only require timberType, timberNature, unitPrice
-      if (isTimberDust) {
-        if (
-          field.name === "timberType" ||
-          field.name === "timberNature" ||
-          field.name === "unitPrice"
-        ) {
-          if (!payload[field.name] || payload[field.name] === "") {
-            toast.error(`${field.label} is required`);
-            return;
-          }
-        }
-      } else {
-        // ✅ Woodwork: do NOT require min/max (they are 0)
-        if ((isBlockMould || isWoodwork) && (field.name === "minlength" || field.name === "maxlength")) {
-          // skip
-        } else {
-          if (!payload[field.name] || payload[field.name] === "") {
-            toast.error(`${field.label} is required`);
-            return;
-          }
-        }
-      }
-
-      if (field.name === "unitPrice") {
-        if (isNaN(payload.unitPrice) || Number(payload.unitPrice) <= 0) {
-          toast.error(`${field.label} must be a valid numeric value greater than 0.00`);
-          return;
-        }
-      }
-    }
-
     try {
-       if (!isWoodwork || !isBlockMould) {
+      for (const field of requiredFields) {
+        // ✅ Dust: only require timberType, timberNature, unitPrice
+        if (isTimberDust) {
+          if (
+            field.name === "timberType" ||
+            field.name === "timberNature" ||
+            field.name === "unitPrice"
+          ) {
+            if (!payload[field.name] || payload[field.name] === "") {
+              toast.error(`${field.label} is required`);
+              return;
+            }
+          }
+        } else {
+          // ✅ Woodwork / BlockMould: do NOT require min/max (they are 0)
+          if (
+            (isBlockMould || isWoodwork) &&
+            (field.name === "minlength" || field.name === "maxlength")
+          ) {
+            // skip
+          } else {
+            if (!payload[field.name] || payload[field.name] === "") {
+              toast.error(`${field.label} is required`);
+              return;
+            }
+          }
+        }
+
+        if (field.name === "unitPrice") {
+          if (isNaN(payload.unitPrice) || Number(payload.unitPrice) <= 0) {
+            toast.error(
+              `${field.label} must be a valid numeric value greater than 0.00`
+            );
+            return;
+          }
+        }
+      }
+
+      // ✅ NOTE: keeping your current logic as-is (even though this condition may be logically questionable)
+      if (!isWoodwork || !isBlockMould) {
         const categoryData = await validateCategoryType(payload);
         if (categoryData != null) {
           if (Array.isArray(categoryData)) {
@@ -198,9 +216,9 @@ const CreateCategory = () => {
             throw new Error("Invalid data format received from API");
           }
         }
-    }
+      }
 
-      // ✅ Skip length overlap validation if Woodwork (min/max are 0)
+      // ✅ Skip length overlap validation if Woodwork/BlockMould (min/max are 0)
       if (!isWoodwork || !isBlockMould) {
         const categoryData2 = await validateCategoryType2(payload);
         if (categoryData2 != null) {
@@ -236,6 +254,8 @@ const CreateCategory = () => {
     } catch (error) {
       console.error("Error creating category:", error.message);
       toast.error(error.message);
+    } finally {
+      setIsSubmitting(false); // ✅ always re-enable
     }
   };
 
@@ -253,7 +273,12 @@ const CreateCategory = () => {
             sx={{ bgcolor: "background.default", borderRadius: 2 }}
           >
             <Grid item xs={12} padding={1}>
-              <Stack direction="row" justifyContent="flex-start" alignItems="center" spacing={2}>
+              <Stack
+                direction="row"
+                justifyContent="flex-start"
+                alignItems="center"
+                spacing={2}
+              >
                 <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
                   Create Load Details
                 </Typography>
@@ -263,7 +288,12 @@ const CreateCategory = () => {
             <Grid item xs={12} md={6} padding={1}>
               <FormControl fullWidth>
                 <Typography>Timber Type</Typography>
-                <Select name="timberType" value={payload.timberType} onChange={handleChange}>
+                <Select
+                  name="timberType"
+                  value={payload.timberType}
+                  onChange={handleChange}
+                  disabled={isSubmitting} // ✅ disable while submitting
+                >
                   {treeTypes.map((type) => (
                     <MenuItem key={type.id ?? type.typeId} value={type.typeName}>
                       {type.typeName}
@@ -276,7 +306,12 @@ const CreateCategory = () => {
             <Grid item xs={12} md={6} padding={1}>
               <FormControl fullWidth>
                 <Typography>Timber Nature</Typography>
-                <Select name="timberNature" value={payload.timberNature} onChange={handleChange}>
+                <Select
+                  name="timberNature"
+                  value={payload.timberNature}
+                  onChange={handleChange}
+                  disabled={isSubmitting} // ✅ disable while submitting
+                >
                   {timberNature.map((type) => (
                     <MenuItem key={type.id ?? type.natureId} value={type.natureName}>
                       {type.natureName}
@@ -293,7 +328,7 @@ const CreateCategory = () => {
                   name="areaLength"
                   value={payload.areaLength}
                   onChange={handleChange}
-                  disabled={isTimberDust}
+                  disabled={isTimberDust || isSubmitting}
                 >
                   {menuItems}
                 </Select>
@@ -307,7 +342,7 @@ const CreateCategory = () => {
                   name="areaWidth"
                   value={payload.areaWidth}
                   onChange={handleChange}
-                  disabled={isTimberDust}
+                  disabled={isTimberDust || isSubmitting}
                 >
                   {[...Array(15)].map((_, i) => (
                     <MenuItem key={i + 1} value={i + 1}>
@@ -325,7 +360,7 @@ const CreateCategory = () => {
                   name="minlength"
                   value={payload.minlength}
                   onChange={handleChange}
-                  disabled={isTimberDust || isWoodwork || isBlockMould} // ✅ disable only for Woodwork (and Dust)
+                  disabled={isTimberDust || isWoodwork || isBlockMould || isSubmitting}
                 >
                   {[...Array(25)].map((_, i) => (
                     <MenuItem key={i + 1} value={i + 1}>
@@ -343,7 +378,7 @@ const CreateCategory = () => {
                   name="maxlength"
                   value={payload.maxlength}
                   onChange={handleChange}
-                  disabled={isTimberDust || isWoodwork || isBlockMould} // ✅ disable only for Woodwork (and Dust)
+                  disabled={isTimberDust || isWoodwork || isBlockMould || isSubmitting}
                 >
                   {[...Array(25)].map((_, i) => (
                     <MenuItem key={i + 1} value={i + 1}>
@@ -369,7 +404,12 @@ const CreateCategory = () => {
                         {key.charAt(0).toUpperCase() +
                           key.slice(1).replace(/([A-Z])/g, " $1")}
                       </Typography>
-                      <OutlinedInput name={key} value={payload[key]} onChange={handleChange} />
+                      <OutlinedInput
+                        name={key}
+                        value={payload[key]}
+                        onChange={handleChange}
+                        disabled={isSubmitting} // ✅ disable while submitting
+                      />
                     </FormControl>
                   </Grid>
                 )
@@ -385,8 +425,8 @@ const CreateCategory = () => {
                 alignItems: "flex-end",
               }}
             >
-              <Button type="submit" variant="contained">
-                Create
+              <Button type="submit" variant="contained" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create"}
               </Button>
             </Grid>
           </Grid>

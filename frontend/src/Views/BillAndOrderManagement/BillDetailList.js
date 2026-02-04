@@ -85,6 +85,7 @@ const BillDetailList = () => {
     },
     { field: "createdDate", headerName: "Created Date", width: 140 },
     { field: "time", headerName: "Time", width: 100 },
+    { field: "createdBy", headerName: "Created By", width: 100 },
     {
       field: "actions",
       headerName: "Actions",
