@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import { DataGrid } from "@mui/x-data-grid";
+import { useSelector } from "react-redux";
 import {
   getAllemployeeDailyDetails,
   updateemployeeDailyDetails,
@@ -52,6 +53,9 @@ const DailyDetailList = () => {
   const [otHours, setOtHours] = useState("");
   const [advancePerDay, setAdvancePerDay] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [rowAttendance, setRowAttendance] = useState(false);
+
+  const { user } = useSelector((state) => state.auth);
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -59,6 +63,12 @@ const DailyDetailList = () => {
     const localDate = new Date(date.getTime() - offset);
     return localDate.toISOString().split("T")[0];
   };
+
+  let currentDate = new Date();
+  let year = currentDate.getFullYear();
+  let month = ("0" + (currentDate.getMonth() + 1)).slice(-2); // Months are zero-based
+  let day = ("0" + currentDate.getDate()).slice(-2);
+  let formattedDate = `${year}-${month}-${day}`;
 
   const getWorkType = (inTime, outTime) => {
     if (!inTime || !outTime) return "-";
@@ -124,7 +134,10 @@ const DailyDetailList = () => {
       const updateData = {
         inTime,
         outTime,
+        isPresent: rowAttendance,
         otHours: calculateOTHours(inTime, outTime),
+        modifiedBy: user.displayName,
+        modifiedDate: formattedDate,
         advancePerDay,
       };
       await updateemployeeDailyDetails(selectedRow.id, updateData);
@@ -246,6 +259,7 @@ const DailyDetailList = () => {
                   setInTime(row.inTime);
                   setOutTime(row.outTime);
                   setOtHours(row.otHours);
+                   setRowAttendance(row.isPresent);
                   setAdvancePerDay(row.advancePerDay);
                   setOpenDialog(true);
                 }
@@ -499,6 +513,18 @@ const DailyDetailList = () => {
                 onChange={(e) => setAdvancePerDay(e.target.value)}
                 fullWidth
               />
+
+            <TextField
+              label="Attendance"
+              value={rowAttendance ? "Present" : "Absent"}
+              onChange={(e) => setRowAttendance(e.target.value === "Present")}
+              select
+              fullWidth
+            >
+              <MenuItem value="Present">Present</MenuItem>
+              <MenuItem value="Absent">Absent</MenuItem>
+            </TextField>
+
             </Box>
           )}
         </DialogContent>
