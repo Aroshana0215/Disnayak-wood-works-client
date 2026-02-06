@@ -235,6 +235,7 @@ const CreateDailyDetails = () => {
           eid_name: employee.firstName,
           status: "A",
           isPaid: false,
+          createdBy: user.displayName,
           createdDate: new Date().toISOString(),
         };
 
