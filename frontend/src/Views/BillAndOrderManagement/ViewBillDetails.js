@@ -45,9 +45,9 @@ const ViewBillDetails = () => {
   let formattedDate = `${year}-${month}-${day}`;
 
   const [categoryData, setCategoryData] = useState({
-    dateAndTime: "",
     cusName: "",
     cusAddress: "",
+    billBookNo:"",
     cusNIC: "",
     cusPhoneNumber: "",
     totalAmount: "",
@@ -71,6 +71,7 @@ const ViewBillDetails = () => {
     dateAndTime: { editable: false, bpMD: 3 },
     cusName: { editable: false, bpMD: 3 },
     cusNIC: { editable: false, bpMD: 3 },
+    billBookNo: { editable: false, bpMD: 3 },
     cusPhoneNumber: { editable: false, bpMD: 3 },
     cusPhoneNumber: { editable: false, bpMD: 3 },
     totalAmount: { editable: false, bpMD: 3 },

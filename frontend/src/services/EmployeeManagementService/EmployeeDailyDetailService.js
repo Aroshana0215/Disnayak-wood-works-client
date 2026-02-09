@@ -9,7 +9,11 @@ import {
   query,
   where,
   orderBy ,
-  Timestamp 
+  Timestamp, 
+  limit,
+  startAfter,
+  endBefore,
+  limitToLast
 } from "firebase/firestore";
 
 const db = getFirestore();
@@ -172,6 +176,47 @@ export const updateemployeeDailyDetails = async (
       "Error updating Price Card employeeDailyDetails: ",
       error.message
     );
+    throw error;
+  }
+};
+
+export const getEmployeeDetails = async ({ startAfterDoc = null, endBeforeDoc = null, pageSize = 10, employeeName = '', fromDate = '', toDate = '',isPrevious=false }) => {
+  try {
+    let q = query(
+      collection(db, "employeeDailyDetails"),
+      orderBy("dateTime", "desc"),
+      isPrevious ? limitToLast(pageSize) : limit(pageSize)
+    );
+
+    // Add search filters to Firestore query
+    if (employeeName) {
+      q = query(q, where("eid_name", "==", employeeName));
+    }
+
+    if (fromDate && toDate) {
+      let fromDateTimestamp = Timestamp.fromDate(new Date(fromDate));
+      let toDateTimestamp = Timestamp.fromDate(new Date(toDate));
+      q = query(q, where("dateTime", ">=", fromDateTimestamp), where("dateTime", "<=", toDateTimestamp));
+    }
+
+    if (startAfterDoc) {
+      q = query(q, startAfter(startAfterDoc)); // For next page
+    }
+
+    if (endBeforeDoc) {
+      q = query(q, endBefore(endBeforeDoc)); // For previous page
+    }
+
+    const querySnapshot = await getDocs(q);
+    const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    return {
+      items,
+      lastVisible: querySnapshot.docs[querySnapshot.docs.length - 1],
+      firstVisible: querySnapshot.docs[0],
+    };
+  } catch (error) {
+    console.error("Error fetching employee details:", error.message);
     throw error;
   }
 };

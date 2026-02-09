@@ -18,14 +18,13 @@ import {
   TextField,
 } from "@mui/material";
 import { Link } from "react-router-dom";
-import { DataGrid } from "@mui/x-data-grid";
 import { useSelector } from "react-redux";
+import { DataGrid } from "@mui/x-data-grid";
 import {
-  getAllemployeeDailyDetails,
   updateemployeeDailyDetails,
+  getEmployeeDetails,
 } from "../../../services/EmployeeManagementService/EmployeeDailyDetailService";
 import { getAllemployeeDetails } from "../../../services/EmployeeManagementService/EmployeeDetailService";
-import Loading from "../../../Components/Progress/Loading";
 import ErrorAlert from "../../../Components/Alert/ErrorAlert";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
@@ -55,7 +54,64 @@ const DailyDetailList = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [rowAttendance, setRowAttendance] = useState(false);
 
-  const { user } = useSelector((state) => state.auth);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastVisible, setLastVisible] = useState(null);
+  const [firstVisible, setFirstVisible] = useState(null);
+
+  let currentDate = new Date();
+  let year = currentDate.getFullYear();
+  let month = ("0" + (currentDate.getMonth() + 1)).slice(-2); // Months are zero-based
+  let day = ("0" + currentDate.getDate()).slice(-2);
+  let formattedDate = `${year}-${month}-${day}`;
+    const { user } = useSelector((state) => state.auth);
+
+  const recordsPerPage = 10;
+  const isLastPage = () => Array.isArray(details) && (details.length < recordsPerPage);
+
+  const handleNextPage = async () => {
+    try {
+      setLoading(true);
+      const data = await getEmployeeDetails({
+        startAfterDoc: lastVisible,
+        pageSize: recordsPerPage,
+        employeeName: selectedEmployee,
+        fromDate: formatDate(fromDate),
+        toDate: formatDate(toDate),
+      });
+      setDetails(data.items);
+      setFilteredDetails(data.items);
+      setLastVisible(data.lastVisible);
+      setFirstVisible(data.firstVisible);
+      setCurrentPage(currentPage + 1);
+    } catch (error) {
+      console.error("Error fetching next page:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePreviousPage = async () => {
+    try {
+      setLoading(true);
+      const data = await getEmployeeDetails({
+        endBeforeDoc: firstVisible,
+        pageSize: recordsPerPage,
+        employeeName: selectedEmployee,
+        fromDate: formatDate(fromDate),
+        toDate: formatDate(toDate),
+        isPrevious: true,
+      });
+      setDetails(data.items);
+      setFilteredDetails(data.items);
+      setLastVisible(data.lastVisible);
+      setFirstVisible(data.firstVisible);
+      setCurrentPage(currentPage - 1);
+    } catch (error) {
+      console.error("Error fetching previous page:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -63,12 +119,6 @@ const DailyDetailList = () => {
     const localDate = new Date(date.getTime() - offset);
     return localDate.toISOString().split("T")[0];
   };
-
-  let currentDate = new Date();
-  let year = currentDate.getFullYear();
-  let month = ("0" + (currentDate.getMonth() + 1)).slice(-2); // Months are zero-based
-  let day = ("0" + currentDate.getDate()).slice(-2);
-  let formattedDate = `${year}-${month}-${day}`;
 
   const getWorkType = (inTime, outTime) => {
     if (!inTime || !outTime) return "-";
@@ -259,8 +309,8 @@ const DailyDetailList = () => {
                   setInTime(row.inTime);
                   setOutTime(row.outTime);
                   setOtHours(row.otHours);
-                   setRowAttendance(row.isPresent);
                   setAdvancePerDay(row.advancePerDay);
+                  setRowAttendance(row.isPresent);
                   setOpenDialog(true);
                 }
               }}
@@ -281,30 +331,6 @@ const DailyDetailList = () => {
     },
   ];
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getAllemployeeDailyDetails();
-        if (Array.isArray(data)) {
-          const sortedData = data
-            .sort((a, b) => a.dateTime.seconds - b.dateTime.seconds)
-            .map((detail, index) => ({
-              ...detail,
-              id: detail.id || index,
-            }));
-          setDetails(sortedData);
-          setFilteredDetails(sortedData);
-          setLoading(false);
-        } else {
-          throw new Error("Invalid data format received from API");
-        }
-      } catch (error) {
-        setError(error.message);
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -319,37 +345,46 @@ const DailyDetailList = () => {
     fetchEmployees();
   }, []);
 
-  const handleSearch = () => {
-    let filteredData = details;
+  const handleSearch = async () => {
+    const queryParams = {
+      employeeName: selectedEmployee,
+      fromDate: formatDate(fromDate),
+      toDate: formatDate(toDate),
+      pageSize: recordsPerPage,
+    };
 
-    if (selectedEmployee) {
-      filteredData = filteredData.filter((detail) => detail.eid_name === selectedEmployee);
+    try {
+      setLoading(true);
+      const data = await getEmployeeDetails(queryParams);
+      setDetails(data.items);
+      setFilteredDetails(data.items);
+      setLastVisible(data.lastVisible);
+      setFirstVisible(data.firstVisible);
+    } catch (error) {
+      console.error("Error performing search:", error);
+    } finally{
+      setLoading(false);
+      setCurrentPage(1);
     }
-
-    if (fromDate && toDate) {
-      const fromDateFormatted = formatDate(fromDate);
-      const toDateFormatted = formatDate(toDate);
-
-      filteredData = filteredData.filter((detail) => {
-        const detailDate = formatDate(new Date(detail.dateTime.seconds * 1000));
-        return detailDate >= fromDateFormatted && detailDate <= toDateFormatted;
-      });
-    }
-
-    setFilteredDetails(filteredData);
   };
 
   useEffect(() => {
+    if (fromDate && toDate) {
+      handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromDate, toDate]);
+  useEffect(() => {
     handleSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEmployee, fromDate, toDate]);
+  }, [selectedEmployee]);
 
   const clearDateFilters = () => {
     setFromDate(null);
     setToDate(null);
+    handleSearch()
   };
 
-  if (loading) return <Loading />;
   if (error) return <ErrorAlert error={error} />;
 
   return (
@@ -357,7 +392,7 @@ const DailyDetailList = () => {
       <Grid container spacing={2} p={2}>
         <Grid item xs={12}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6" fontWeight="bold" sx={{ color: "#9C6B3D" }}>
+            <Typography variant="h6" fontWeight="bold" color="primary">
               Daily Employee Details
             </Typography>
 
@@ -371,7 +406,7 @@ const DailyDetailList = () => {
                 padding: "5px 15px",
               }}
             >
-              <CalendarMonthIcon fontSize="medium" sx={{ color: "#9C6B3D" }} />
+              <CalendarMonthIcon fontSize="medium" color="primary" />
             </IconButton>
 
             <Button
@@ -446,12 +481,10 @@ const DailyDetailList = () => {
                 marginTop: "20px",
               },
             }}
+            loading={loading}
             rows={filteredDetails}
             columns={columns}
-            initialState={{
-              pagination: { paginationModel: { pageSize: 8 } },
-            }}
-            pageSizeOptions={[8]}
+            hideFooterPagination={true}
             disableRowSelectionOnClick
             getRowClassName={(params) => {
               const index = filteredDetails.findIndex((row) => row.id === params.id);
@@ -463,6 +496,25 @@ const DailyDetailList = () => {
               return "";
             }}
           />
+        </Grid>
+        <Grid item xs={12}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", padding: "10px 0" }}>
+            <Button
+              variant="outlined"
+              onClick={handlePreviousPage}
+              disabled={loading || currentPage <= 1}
+            >
+              Previous
+            </Button>
+            <Typography variant="body1">Page {currentPage}</Typography>
+            <Button
+              variant="outlined"
+              onClick={handleNextPage}
+              disabled={!lastVisible || loading || isLastPage()}
+            >
+              Next
+            </Button>
+          </Box>
         </Grid>
       </Grid>
 

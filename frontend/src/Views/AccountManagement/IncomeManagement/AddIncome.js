@@ -63,8 +63,8 @@ const AddIncome = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (isSubmitting) return;
-    setIsSubmitting(true);
+    if (isSubmitting) return; // Prevent double-submit
+    setIsSubmitting(true); // Set submitting state to true
 
     try {
       let formattedFormData = {
@@ -104,8 +104,8 @@ const AddIncome = () => {
       window.location.href = "/income";
     } catch (error) {
       console.error("Error creating income:", error.message);
-    }finally {
-      setIsSubmitting(false); // ✅ always re-enable
+    } finally {
+      setIsSubmitting(false); // ✅ Always re-enable the button after async task
     }
   };
 
@@ -184,8 +184,8 @@ const AddIncome = () => {
                 alignItems: "flex-end",
               }}
             >
-              <Button type="submit" variant="contained" sx={{ color: "#fdfdfd" }}>
-                Create
+              <Button type="submit" variant="contained" sx={{ color: "#fdfdfd" }} disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create"}
               </Button>
             </Grid>
           </Grid>

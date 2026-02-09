@@ -66,6 +66,7 @@ const CreateNewBill = () => {
     remainningAmount: 0,
     PromizeDate: "",
     description: "",
+    billBookNo: "",
     billStatus: "",
   });
 
@@ -79,7 +80,7 @@ const CreateNewBill = () => {
     if (row.natureName === "Block" || row.natureName === "Blocks") return round2(length * amount);
 
     if (row.natureName === "Planks" || row.natureName === "Plank") {
-      if (width > 9) return round2(length * amount);
+      if (width > 8) return round2(length * amount);
       return round2(((length * width) / 12) * amount);
     }
 
@@ -96,7 +97,7 @@ const CreateNewBill = () => {
     if (nature === "block" || nature === "blocks") return round2(length * amount * billPrice);
 
     if (nature === "plank" || nature === "planks") {
-      if (width > 9) return round2(length * amount * billPrice);
+      if (width > 8) return round2(length * amount * billPrice);
       const sqFeet = (length * width) / 12;
       return round2(sqFeet * amount * billPrice);
     }
@@ -147,6 +148,9 @@ const CreateNewBill = () => {
       status = true;
     } else if (!formDataArg.billStatus) {
       toast.error("Status required");
+      status = true;
+    }else if (!formDataArg.billBookNo) {
+      toast.error("BillBook No required");
       status = true;
     }
 
@@ -558,7 +562,21 @@ const CreateNewBill = () => {
                     </Grid>
 
                     <Grid item xs={12} md={4}>
-                      <FormControl fullWidth sx={{ mt: 0.5 }}>
+                      <FormControl fullWidth>
+                        <FormLabel>Bill Book No</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="billBookNo"
+                          value={formData.billBookNo}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          sx={{ mt: 0.5 }}
+                        />
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth sx={{ mt: 0.5 }}> <br></br>
                         <InputLabel>Bill Status</InputLabel>
                         <Select
                           name="billStatus"

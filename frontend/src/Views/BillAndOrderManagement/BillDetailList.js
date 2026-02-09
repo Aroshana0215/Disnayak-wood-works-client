@@ -28,7 +28,8 @@ const BillDetailList = () => {
 
   const columns = [
     { field: "billID", headerName: "ID", width: 90 },
-    { field: "cusName", headerName: "Customer Name", width: 150 },
+    { field: "billBookNo", headerName: "Bill No", width: 80 },
+    { field: "cusName", headerName: "Customer Name", width: 140 },
     {
       field: "totalAmount",
       headerName: "Total (RS:)",

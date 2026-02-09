@@ -27,6 +27,7 @@ const CreateIncomeType = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ prevent double submit
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,6 +64,9 @@ const CreateIncomeType = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     
     const validationResult = await validateInputs();
     
@@ -80,6 +84,8 @@ const CreateIncomeType = () => {
       window.location.href = "/setting/incomeType";
     } catch (error) {
       console.error("Error creating income type:", error.message);
+    }finally {
+      setIsSubmitting(false); // ✅ always re-enable
     }
   };
 
@@ -119,6 +125,8 @@ const CreateIncomeType = () => {
                   name="typeName"
                   value={formData.typeName}
                   onChange={handleChange}
+                  disabled={isSubmitting} // ✅ disable while submitting
+                  required
                   variant="outlined"
                   fullWidth
                   placeholder="Enter type name"
@@ -139,6 +147,8 @@ const CreateIncomeType = () => {
                   value={formData.description}
                   onChange={handleChange}
                   variant="outlined"
+                  disabled={isSubmitting} // ✅ disable while submitting
+                  required
                   fullWidth
                   multiline
                   rows={4}
@@ -158,8 +168,8 @@ const CreateIncomeType = () => {
                 justifyContent: "flex-end",
               }}
             >
-              <Button type="submit" variant="contained" sx={{ color: "#f4f2f1" }}>
-                Create
+              <Button type="submit" variant="contained" sx={{ color: "#f4f2f1" }} disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create"}
               </Button>
             </Grid>
           </Grid>
