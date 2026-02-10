@@ -48,7 +48,7 @@ const IncomeList = () => {
       headerName: "Actions",
       width: 120,
       renderCell: ({ row }) => (
-        <Link to={`/income/view/${row.incID}`}>
+        <Link to={`/income/view/${row.id}`}>
           <Button variant="contained" size="small">View</Button>
         </Link>
       ),

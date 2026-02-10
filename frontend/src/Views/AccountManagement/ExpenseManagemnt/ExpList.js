@@ -42,8 +42,8 @@ const ExpList = () => {
       field: "actions",
       headerName: "Actions",
       width: 120,
-      renderCell: (params) => (
-        <Link to={`/load/timber/view/${params.row.id}`}>
+      renderCell: (row) => (
+        <Link to={`/exp/view/${row.id}`}>
           <Button variant="contained" size="small">
             View
           </Button>

@@ -19,6 +19,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { DataGrid } from "@mui/x-data-grid";
 import { ToastContainer, toast } from "react-toastify";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { TextField } from "@mui/material";
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'; 
 
 import { newBill } from "../../services/BillAndOrderService/BilllManagemntService";
 import {
@@ -59,7 +64,6 @@ const CreateNewBill = () => {
   const [formData, setFormData] = useState({
     cusName: "",
     cusAddress: "",
-    cusNIC: "",
     cusPhoneNumber: "",
     totalAmount: 0,
     advance: 0,
@@ -68,6 +72,7 @@ const CreateNewBill = () => {
     description: "",
     billBookNo: "",
     billStatus: "",
+    billCreatedDate: "", // Add the billCreatedDate state
   });
 
   const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -131,9 +136,6 @@ const CreateNewBill = () => {
     } else if (!formDataArg.cusAddress) {
       toast.error("Customer Address required");
       status = true;
-    } else if (!formDataArg.cusNIC) {
-      toast.error("NIC required");
-      status = true;
     } else if (!formDataArg.cusPhoneNumber) {
       toast.error("Customer Phone Number required");
       status = true;
@@ -149,8 +151,11 @@ const CreateNewBill = () => {
     } else if (!formDataArg.billStatus) {
       toast.error("Status required");
       status = true;
-    }else if (!formDataArg.billBookNo) {
+    } else if (!formDataArg.billBookNo) {
       toast.error("BillBook No required");
+      status = true;
+    }else if (!formDataArg.billCreatedDate) {
+      toast.error("Bill create date required");
       status = true;
     }
 
@@ -459,20 +464,6 @@ const CreateNewBill = () => {
 
                     <Grid item xs={12} md={4}>
                       <FormControl fullWidth>
-                        <FormLabel>Customer NIC</FormLabel>
-                        <OutlinedInput
-                          size="small"
-                          name="cusNIC"
-                          value={formData.cusNIC}
-                          onChange={handleChange}
-                          disabled={isSubmitting}
-                          sx={{ mt: 0.5 }}
-                        />
-                      </FormControl>
-                    </Grid>
-
-                    <Grid item xs={12} md={4}>
-                      <FormControl fullWidth>
                         <FormLabel>Phone Number</FormLabel>
                         <OutlinedInput
                           size="small"
@@ -535,20 +526,6 @@ const CreateNewBill = () => {
 
                     <Grid item xs={12} md={4}>
                       <FormControl fullWidth>
-                        <FormLabel>Promize Date</FormLabel>
-                        <OutlinedInput
-                          size="small"
-                          name="PromizeDate"
-                          value={formData.PromizeDate}
-                          onChange={handleChange}
-                          disabled={isSubmitting}
-                          sx={{ mt: 0.5 }}
-                        />
-                      </FormControl>
-                    </Grid>
-
-                    <Grid item xs={12} md={4}>
-                      <FormControl fullWidth>
                         <FormLabel>Description</FormLabel>
                         <OutlinedInput
                           size="small"
@@ -575,7 +552,7 @@ const CreateNewBill = () => {
                       </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} md={4}>
+                     <Grid item xs={12} md={4}>
                       <FormControl fullWidth sx={{ mt: 0.5 }}> <br></br>
                         <InputLabel>Bill Status</InputLabel>
                         <Select
@@ -592,6 +569,52 @@ const CreateNewBill = () => {
                         </Select>
                       </FormControl>
                     </Grid>
+
+                      <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Promize Date</FormLabel>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                          <DatePicker
+                            name="PromizeDate"
+                            value={formData.PromizeDate}
+                            onChange={(date) => handleChange({ target: { name: "PromizeDate", value: date } })}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                size="small"
+                                sx={{
+                                  mt: 0.5,
+                                  bgcolor: "rgba(0,0,0,0.03)",
+                                  fontWeight: 800,
+                                }}
+                              />
+                            )}
+                          />
+                        </LocalizationProvider>
+                      </FormControl>
+                    </Grid>
+
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DateTimePicker
+                        name="billCreatedDate"
+                        value={formData.billCreatedDate}
+                        onChange={(date) => handleChange({ target: { name: "billCreatedDate", value: date } })}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            sx={{
+                              mt: 0.5,
+                              bgcolor: "rgba(0,0,0,0.03)",
+                              fontWeight: 800,
+                            }}
+                            value={formData.billCreatedDate ? formData.billCreatedDate.toLocaleString() : ""} // Format date
+                          />
+                        )}
+                      />
+                    </LocalizationProvider>
+
+
                   </Grid>
                 </Paper>
               </Grid>

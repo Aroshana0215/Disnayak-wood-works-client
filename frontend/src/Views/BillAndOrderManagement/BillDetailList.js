@@ -34,13 +34,19 @@ const BillDetailList = () => {
       field: "totalAmount",
       headerName: "Total (RS:)",
       width: 130,
-      renderCell: ({ row }) => `${row.totalAmount}.00`,
+      renderCell: ({ row }) => {
+        const formattedAmount = new Intl.NumberFormat('en-GB').format(row.totalAmount);
+        return `${formattedAmount}.00`;
+      },
     },
     {
       field: "advance",
       headerName: "Advance (RS:)",
       width: 130,
-      renderCell: ({ row }) => `${row.advance}.00`,
+      renderCell: ({ row }) => {
+        const formattedAmount = new Intl.NumberFormat('en-GB').format(row.advance);
+        return `${formattedAmount}.00`;
+      },
     },
     {
       field: "billStatus",
@@ -84,8 +90,41 @@ const BillDetailList = () => {
         return <Chip {...chipProps} />;
       },
     },
-    { field: "createdDate", headerName: "Created Date", width: 140 },
-    { field: "time", headerName: "Time", width: 100 },
+    {
+      field: "billCreatedDate",
+      headerName: "Bill Date",
+      width: 140,
+      renderCell: ({ row }) => {
+        if (!row.billCreatedDate || !row.billCreatedDate.seconds) {
+          return "N/A"; // Fallback in case the date is missing or improperly formatted
+        }
+
+        // Convert timestamp (seconds) to Date object
+        const date = new Date(row.billCreatedDate.seconds * 1000); // Convert seconds to milliseconds
+        const formattedDate = date.toLocaleString('en-GB', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        });
+        return formattedDate; // Output: "01/10/2023, 23:39:00"
+      },
+    },
+    {
+      field: "time",
+      headerName: "Time",
+      width: 100,
+      renderCell: ({ row }) => {
+        // Extract time (HH:MM) from 'billCreatedDate'
+        if (!row.billCreatedDate || !row.billCreatedDate.seconds) {
+          return "N/A"; // Fallback if timestamp is missing
+        }
+
+        const date = new Date(row.billCreatedDate.seconds * 1000); // Convert seconds to milliseconds
+        const hours = String(date.getHours()).padStart(2, '0'); // Add leading zero if needed
+        const minutes = String(date.getMinutes()).padStart(2, '0'); // Add leading zero if needed
+        return `${hours}:${minutes}`; // Output: "23:39"
+      },
+    },
     { field: "createdBy", headerName: "Created By", width: 100 },
     {
       field: "actions",
