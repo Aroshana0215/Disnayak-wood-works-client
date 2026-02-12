@@ -159,16 +159,16 @@ const CreateNewBill = () => {
       status = true;
     }
 
+        for (const wood of woodDataArg) {
+      if (formDataArg.billStatus !== "ORDER" && Number(wood.toBeCut) > 0) {
+        toast.error("No stock for timber!! check Bill status");
+        status = true;
+      }
+    }
+
     if (formDataArg.billStatus === "COMPLETE" && Number(formDataArg.advance) > 0) {
       toast.error("Cannot have advance for Complete bill !!");
       status = true;
-    }
-
-    for (const wood of woodDataArg) {
-      if (formDataArg.billStatus !== "ORDER" && Number(wood.toBeCut) > 0) {
-        toast.error("No stock for timber!!");
-        status = true;
-      }
     }
 
     return status;
@@ -273,7 +273,7 @@ const CreateNewBill = () => {
           const incomeId = await newIncome({
             date: currentDateTime,
             type: `${formData.billStatus}-Bill`,
-            des: "Nothing",
+            des: `${formData.billStatus} bill in bill creation`,
             amount: incomeAmount,
             BilId: bill.billID || "",
             status: "A",
@@ -578,6 +578,7 @@ const CreateNewBill = () => {
                             name="PromizeDate"
                             value={formData.PromizeDate}
                             onChange={(date) => handleChange({ target: { name: "PromizeDate", value: date } })}
+                            disabled={isSubmitting}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
@@ -594,11 +595,15 @@ const CreateNewBill = () => {
                       </FormControl>
                     </Grid>
 
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Bill Date</FormLabel>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
                       <DateTimePicker
                         name="billCreatedDate"
                         value={formData.billCreatedDate}
                         onChange={(date) => handleChange({ target: { name: "billCreatedDate", value: date } })}
+                         disabled={isSubmitting}
                         renderInput={(params) => (
                           <TextField
                             {...params}
@@ -612,7 +617,9 @@ const CreateNewBill = () => {
                           />
                         )}
                       />
-                    </LocalizationProvider>
+                       </LocalizationProvider>
+                      </FormControl>
+                    </Grid>
 
 
                   </Grid>

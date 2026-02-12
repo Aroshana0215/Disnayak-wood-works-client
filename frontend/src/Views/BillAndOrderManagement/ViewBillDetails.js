@@ -12,15 +12,20 @@ import {
 import { getbillDetailsById, updatebillDetails } from "../../services/BillAndOrderService/BilllManagemntService";
 import { getorderIdByBillId } from "../../services/BillAndOrderService/OrderManagmentService";
 import { updateorder } from "../../services/BillAndOrderService/OrderManagmentService";
+import { newIncome } from "../../services/AccountManagementService/IncomeManagmentService";
 import { getActiveStockSummaryDetails, createStockSummary, updateStockSummaryDetails, getStockSummaryById } from "../../services/InventoryManagementService/StockSummaryManagementService";
 import { getCategoryById } from "../../services/PriceCardService";
+import { getAdvanceDetailsByBillId } from "../../services/BillAndOrderService/BilllAdvanceService";
 import { DataGrid } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { useSelector } from "react-redux";
 import {  toast } from "react-toastify";
 
 import CancelBillDialog from './CancelBillDialog'; // Import the dialog component
+import CompleteBillDialog from './CompleteBillDialog'; // Import the dialog component
+import AdvanceListDialog from './AdvanceListDialog';
 
 const ViewBillDetails = () => {
   const { billId } = useParams();
@@ -33,6 +38,8 @@ const ViewBillDetails = () => {
   const [rerun, setRerun ]= useState(false);
 ;
   const [openDialog, setOpenDialog] = useState(false);
+  const [openAdvanceDialog, setOpenAdvanceDialog] = useState(false);
+
 
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -45,6 +52,7 @@ const ViewBillDetails = () => {
   let formattedDate = `${year}-${month}-${day}`;
 
   const [categoryData, setCategoryData] = useState({
+    id:"",
     cusName: "",
     cusAddress: "",
     billBookNo:"",
@@ -53,6 +61,7 @@ const ViewBillDetails = () => {
     totalAmount: "",
     advance: "",
     remainningAmount: "",
+    billID: "",
     // PromizeDate: "",
     // billCreatedDate: "",
     description: "",
@@ -66,6 +75,15 @@ const ViewBillDetails = () => {
     modifiedBy: "",
     modifiedDate: "",
   });
+
+
+const [billAdvance, setBillAdvance] = useState({
+  BillId: "",
+  amount: "0",  // Initialize with a default value
+  date: "",
+  description: "",
+});
+
   const [isLoadDataEditable, setIsLoadDataEditable] = useState(false);
   // eslint-disable-next-line no-unused-vars
   const [loadData, setLoadData] = useState({
@@ -154,6 +172,20 @@ const ViewBillDetails = () => {
     fetchData();
   }, [billId,rerun]);
 
+
+    useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getAdvanceDetailsByBillId(billId);
+        setBillAdvance(data); 
+      } catch (error) {
+        toast.warn("Error fetching Advance data.");
+        console.error("Error fetching Advance data:", error.message);
+      }
+    };
+
+    fetchData();
+  }, [openAdvanceDialog,billId]);
 
   useEffect(() => {
     const completeTimberStock = async () => {
@@ -285,6 +317,17 @@ const ViewBillDetails = () => {
     });
   };
 
+    const onClickLoadAdvance = async (event) => {
+      try {
+        const data = await getAdvanceDetailsByBillId(billId);
+        setBillAdvance(data);
+        setOpenAdvanceDialog(true); 
+      } catch (error) {
+        toast.warn("Error fetching Advance data.");
+        console.error("Error fetching Advance data:", error.message);
+      }
+  };
+
 
   
   const handleComplete = async () => {
@@ -294,17 +337,30 @@ const ViewBillDetails = () => {
     if (incompleteCategories.length > 0) {
       toast.warn("There are incomplete categories.");
     } else {
-      toast.success("Complete button clicked");
+      toast.success("Sucessfully Completed");
 
-      const newBillDetails = {
+      const updateBillDetails = {
         ...categoryData,
         billStatus : "COMPLETE",
         remainningAmount: 0 ,
         modifiedBy: user.displayName,
         modifiedDate: formattedDate,
       }
+      
+       const incomeId = await newIncome({
+                  date: formattedDate,
+                  type: `Balance-Bill`,
+                  des: "Bill balance cleared.",
+                  amount: categoryData.remainningAmount,
+                  BilId: categoryData.billID|| "",
+                  status: "A",
+                  createdBy: user.displayName,
+                  createdDate: formattedDate,
+                });
   
-      updatebillDetails(billId , newBillDetails);
+      if (incomeId) {
+      updatebillDetails(billId , updateBillDetails);
+      }
 
       // Navigate to the bill view page
       navigate(`/bill`);
@@ -318,7 +374,7 @@ const ViewBillDetails = () => {
   };
   
 
-  const handleCancel = () => {
+  const handleDialogBoxOpen = () => {
       setOpenDialog(true); // Open the dialog when there are incomplete categories
 
   };
@@ -326,6 +382,16 @@ const ViewBillDetails = () => {
   const handleDialogClose = () => {
     setOpenDialog(false);
   };
+
+    const handleAdvanceDialogBoxOpen = () => {
+      setOpenAdvanceDialog(true); // Open the dialog when there are incomplete categories
+
+  };
+
+  const handleAdvanceDialogClose = () => {
+    setOpenAdvanceDialog(false);
+  };
+
 
   const handleDialogConfirm = async () => {
 
@@ -395,7 +461,7 @@ const ViewBillDetails = () => {
       }
     }
 
-    const newBillDetails = {
+    const updateBillDetails = {
       ...categoryData,
       billStatus : "CANCEL",
       remainningAmount: 0 ,
@@ -403,7 +469,7 @@ const ViewBillDetails = () => {
       modifiedDate: formattedDate,
     }
 
-    updatebillDetails(billId , newBillDetails);
+    updatebillDetails(billId , updateBillDetails);
 
     navigate(`/bill`);
 
@@ -507,24 +573,33 @@ const ViewBillDetails = () => {
             <Grid item xs={12} padding={1}>
               <Stack
                 direction="row"
-                justifyContent="flex-start"
+                justifyContent="space-between"  // This will space the buttons apart (left and right)
                 alignItems="center"
                 spacing={2}
               >
                 <Typography variant="h6" sx={{ color: "#9C6B3D" }} align="center">
                   Order details
                 </Typography>
+                
                 <Button
                   startIcon={<EditIcon />} // Changed icon to indicate an update
                   onClick={onClickUpdate}
                   variant="outlined"
-                  justifyContent="flex-end"
                   disabled={categoryData.billStatus !== "ORDER"}
                 >
                   Update Timber
                 </Button>
+
+                <Button
+                  startIcon={<VisibilityIcon />}
+                  onClick={handleAdvanceDialogBoxOpen}
+                  variant="outlined"
+                >
+                  View Advance
+                </Button>
               </Stack>
             </Grid>
+
             <Grid item xs={12} padding={1}>
               <DataGrid
                 rows={categories}
@@ -549,14 +624,14 @@ const ViewBillDetails = () => {
                   <Button
                     variant="contained"
                     color="success"
-                    onClick={handleComplete}
+                    onClick={handleDialogBoxOpen}
                   >
                     Complete
                   </Button>
                   <Button
                     variant="contained"
                     color="error"
-                    onClick={handleCancel}
+                    onClick={handleDialogBoxOpen}
                   >
                     Cancel
                   </Button>
@@ -569,12 +644,29 @@ const ViewBillDetails = () => {
         </Grid>
       </Grid>
 
-      {/* Confirmation Dialog */}
+      {/* Confirmation cancle Dialog */}
       <CancelBillDialog
         open={openDialog}
         onClose={handleDialogClose}
         onConfirm={handleDialogConfirm}
         />
+
+      {/* Confirmation complete Dialog */}
+      <CompleteBillDialog
+        open={openDialog}
+        onClose={handleDialogClose}
+        onConfirm={handleComplete}
+        remaingAmount={categoryData.remainningAmount}
+        />
+  
+        {/* Confirmation Advance Dialog */}
+      <AdvanceListDialog
+        open={openAdvanceDialog}
+        onClose={handleAdvanceDialogClose}
+        onConfirm={handleComplete}
+        billAdvance={billAdvance}
+        />
+  
 
     </>
   );

@@ -8,6 +8,7 @@ import {
     doc,
     query,
     where,
+    orderBy,
   } from "firebase/firestore";
   
   const db = getFirestore();
@@ -98,3 +99,24 @@ import {
     }
   };
   
+
+export const getAdvanceDetailsByBillId = async (billId) => {
+  console.log("billId:",billId);
+  try {
+    const q = query(
+      collection(db, "billAdvance"),
+      where("BillId", "==", billId),
+    );
+    const querySnapshot = await getDocs(q);
+
+    const billDetailsList = [];
+    querySnapshot.forEach((doc) => {
+      billDetailsList.push({ id: doc.id, ...doc.data() });
+    });
+
+    return billDetailsList;
+  } catch (error) {
+    console.error("Error getting bill advance details: ", error.message);
+    throw error;
+  }
+};

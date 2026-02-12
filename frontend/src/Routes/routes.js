@@ -29,7 +29,7 @@ import GetWantsWood from "../Views/BillAndOrderManagement/GetWantsWoodAmount";
 import ShowRemainWood from "../Views/BillAndOrderManagement/ShowRemainWood";
 import CreateNewBill from "../Views/BillAndOrderManagement/CreateNewBill";
 import ViewBillDetails from "../Views/BillAndOrderManagement/ViewBillDetails";
-import UpdateBill from "../Views/BillAndOrderManagement/UpdateBill";
+import UpdateBillAdvance from "../Views/BillAndOrderManagement/UpdateBillAdvance.js";
 import StockHistory from "../Views/BillAndOrderManagement/StockHistory";
 import EmployeeList from "../Views/EmployeeManagement/EmployeeDetailsManagment/EmployeeList";
 import EPaymentList from "../Views/EmployeeManagement/EmployeeDetailsManagment/EmployeePaymentList";
@@ -162,7 +162,7 @@ const privateRouter = createBrowserRouter([
       },
       {
         path: "/bill/update/:billId",
-        element: <UpdateBill />,
+        element: <UpdateBillAdvance />,
       },
       {
         path: "/stock/history",

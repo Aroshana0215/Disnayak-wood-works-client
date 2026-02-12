@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogActions,
@@ -19,15 +19,21 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { getbillAdvancesByBillId, createbillAdvance } from "../../services/BillAndOrderService/BilllAdvanceService";
 import { getbillDetailsById, updatebillDetails } from "../../services/BillAndOrderService/BilllManagemntService";
+import { newIncome } from "../../services/AccountManagementService/IncomeManagmentService";
 import { ToastContainer, toast } from "react-toastify";
 
-const UpdateBill = ({ open, onClose, user, bill }) => {
+const UpdateBillAdvance = ({ open, onClose, user, bill }) => {
 
-  let currentDate = new Date();
-  let year = currentDate.getFullYear();
-  let month = ("0" + (currentDate.getMonth() + 1)).slice(-2); // Months are zero-based
-  let day = ("0" + currentDate.getDate()).slice(-2);
-  let formattedDate = `${year}-${month}-${day}`;
+  const currentDate = useMemo(() => new Date(), []);
+  const currentDateTime = useMemo(() => currentDate.toISOString(), [currentDate]);
+
+  const formattedDate = useMemo(() => {
+    const y = currentDate.getFullYear();
+    const m = String(currentDate.getMonth() + 1).padStart(2, "0");
+    const d = String(currentDate.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }, [currentDate]);
+  
 
 
   const [billData, setBillData] = useState([]);
@@ -67,7 +73,7 @@ const UpdateBill = ({ open, onClose, user, bill }) => {
       BillId : bill.id, 
       status: "A",
       createdBy: user.displayName,
-      createdDate: formattedDate,
+      createdDate: currentDateTime,
     }
     const AdvanceId = await createbillAdvance(payLoad);
 
@@ -80,8 +86,21 @@ const UpdateBill = ({ open, onClose, user, bill }) => {
         modifiedBy: user.displayName,
         modifiedDate: formattedDate,
       }
+
+      const incomeId = await newIncome({
+                  date: currentDateTime,
+                  type: `Advance-Bill`,
+                  des: "Order Advance",
+                  amount: newAdvance.amount,
+                  BilId: bill.billID|| "",
+                  status: "A",
+                  createdBy: user.displayName,
+                  createdDate: currentDateTime,
+                });
   
+      if (incomeId) {
       updatebillDetails(bill.id, newBillDetails);
+      }
      }else{
       toast.success("Inavlid Bill!");
      }
@@ -209,4 +228,4 @@ const UpdateBill = ({ open, onClose, user, bill }) => {
   );
 };
 
-export default UpdateBill;
+export default UpdateBillAdvance;

@@ -10,7 +10,7 @@ import ErrorAlert from "../../Components/Alert/ErrorAlert";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import { Chip } from "@mui/material";
-import UpdateBill from './UpdateBill'; // Import the dialog component
+import UpdateBillAdvance from './UpdateBillAdvance'; // Import the dialog component
 import { useSelector } from "react-redux";
 
 const BillDetailList = () => {
@@ -367,9 +367,9 @@ const BillDetailList = () => {
         </Grid>
       </Grid>
 
-      {/* Dialog to update bill */}
+      {/* Dialog to update bill (updateAAdvance)*/}
       {selectedBillId && (
-        <UpdateBill
+        <UpdateBillAdvance
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
           user={user}
