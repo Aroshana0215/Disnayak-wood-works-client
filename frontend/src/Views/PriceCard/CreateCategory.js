@@ -71,6 +71,9 @@ const CreateCategory = () => {
   ];
   const defaultValues = Array.from({ length: 30 }, (_, i) => i + 1);
 
+  const areaLengthValuesWoodwork = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5 , 6 , 6.5, 7, 7.5, 8, 8.5 ,9 , 9.5 , 10, 10.5 , 11 , 11.5 , 12];
+  const areaWidthValuesWoodwork = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5 , 6 , 6.5, 7, 7.5, 8, 8.5 ,9 , 9.5 , 10, 10.5 , 11 , 11.5 , 12];
+
   const renderMenuItems = (values) =>
     values.map((value) => (
       <MenuItem key={value} value={value}>
@@ -80,6 +83,14 @@ const CreateCategory = () => {
 
   const menuItems = isplank
     ? renderMenuItems(plankValues)
+    : renderMenuItems(defaultValues);
+
+  const areaLengthMenuItems = payload.timberNature === "Woodwork"
+    ? renderMenuItems(areaLengthValuesWoodwork)
+    : renderMenuItems(defaultValues);
+
+  const areaWidthMenuItems = payload.timberNature === "Woodwork"
+    ? renderMenuItems(areaWidthValuesWoodwork)
     : renderMenuItems(defaultValues);
 
   const handleChange = (e) => {
@@ -92,6 +103,12 @@ const CreateCategory = () => {
         // ✅ flags
         setIsWoodwork(value === "Woodwork");
         setIsBlockMould(value === "BlockMould");
+
+        if (value === "Woodwork") {
+          // Set area length and area width options specific to "Woodwork"
+          next.areaLength = "1"; // Default to 1 or any other value
+          next.areaWidth = "1"; // Default to 1 or any other value
+        }
 
         if (value === "Planks") {
           setIsplank(true);
@@ -330,7 +347,7 @@ const CreateCategory = () => {
                   onChange={handleChange}
                   disabled={isTimberDust || isSubmitting}
                 >
-                  {menuItems}
+                  {areaLengthMenuItems}
                 </Select>
               </FormControl>
             </Grid>
@@ -344,11 +361,7 @@ const CreateCategory = () => {
                   onChange={handleChange}
                   disabled={isTimberDust || isSubmitting}
                 >
-                  {[...Array(15)].map((_, i) => (
-                    <MenuItem key={i + 1} value={i + 1}>
-                      {i + 1}
-                    </MenuItem>
-                  ))}
+                  {areaWidthMenuItems}
                 </Select>
               </FormControl>
             </Grid>

@@ -367,7 +367,7 @@ const BillDetailList = () => {
         </Grid>
       </Grid>
 
-      {/* Dialog to update bill (updateAAdvance)*/}
+      {/* Dialog to update bill (updateAdvance)*/}
       {selectedBillId && (
         <UpdateBillAdvance
           open={dialogOpen}

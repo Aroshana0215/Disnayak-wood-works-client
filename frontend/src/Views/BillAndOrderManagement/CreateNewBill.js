@@ -67,6 +67,7 @@ const CreateNewBill = () => {
     cusPhoneNumber: "",
     totalAmount: 0,
     advance: 0,
+    otherCharges: 0,
     remainningAmount: 0,
     PromizeDate: "",
     description: "",
@@ -110,17 +111,18 @@ const CreateNewBill = () => {
     return round2(amount * billPrice);
   };
 
-  const calculateTotals = (advance) => {
-    const totalAmount = woodData.reduce((sum, wood) => sum + getRowTotal(wood), 0);
+  const calculateTotals = (advance, otherCharges) => {
+    let totalAmount = woodData.reduce((sum, wood) => sum + getRowTotal(wood), 0);
+    totalAmount = totalAmount + Number(otherCharges || 0)
     const remainningAmount = totalAmount - Number(advance || 0);
     return { totalAmount: round2(totalAmount), remainningAmount: round2(remainningAmount) };
   };
 
   useEffect(() => {
-    const { totalAmount, remainningAmount } = calculateTotals(formData.advance);
+    const { totalAmount, remainningAmount } = calculateTotals(formData.advance, formData.otherCharges);
     setFormData((prev) => ({ ...prev, totalAmount, remainningAmount }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [woodData, formData.advance]);
+  }, [woodData, formData.advance, formData.otherCharges]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -567,6 +569,20 @@ const CreateNewBill = () => {
                           <MenuItem value="COMPLETE">COMPLETE</MenuItem>
                           <MenuItem value="INTERNAL">INTERNAL</MenuItem>
                         </Select>
+                      </FormControl>
+                    </Grid>
+
+                      <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <FormLabel>Other Charges</FormLabel>
+                        <OutlinedInput
+                          size="small"
+                          name="otherCharges"
+                          value={formData.otherCharges}
+                          onChange={handleChange}
+                          disabled={isSubmitting}
+                          sx={{ mt: 0.5 }}
+                        />
                       </FormControl>
                     </Grid>
 

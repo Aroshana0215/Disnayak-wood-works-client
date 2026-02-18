@@ -88,7 +88,7 @@ const UpdateBillAdvance = ({ open, onClose, user, bill }) => {
       }
 
       const incomeId = await newIncome({
-                  date: currentDateTime,
+                  date: newAdvance.date,
                   type: `Advance-Bill`,
                   des: "Order Advance",
                   amount: newAdvance.amount,
