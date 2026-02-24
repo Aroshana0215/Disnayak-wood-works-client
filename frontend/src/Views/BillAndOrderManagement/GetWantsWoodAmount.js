@@ -27,10 +27,10 @@ import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import EditIcon from "@mui/icons-material/Edit";
 
 import { useNavigate } from "react-router-dom";
-
 import { getAllActiveTreeType } from "../../services/SettingManagementService/TreeTypeService";
 import { getAllActiveTimberNature } from "../../services/SettingManagementService/TimberNatureService";
 import { getAllCategoriesByTypeNature } from "../../services/PriceCardService";
+import { toast } from "react-toastify"; // Import react-toastify
 
 const emptyRow = {
   treeTypeId: "",
@@ -232,6 +232,16 @@ const GetWantsWood = () => {
     // basic validation
     if (!current.treeTypeId || !current.timberNatureId || !current.categoryId || !current.amount) {
       alert("Please select Tree Type, Timber Nature, Category, Length, and Amount.");
+      return;
+    }
+
+    // Check if the same categoryId with the same length is already in rows
+    const duplicate = rows.some(
+      (row) => row.categoryId === current.categoryId && row.length === current.length
+    );
+
+    if (duplicate) {
+      toast.warning("Cannot add this category again. It is already in the added list.");
       return;
     }
 

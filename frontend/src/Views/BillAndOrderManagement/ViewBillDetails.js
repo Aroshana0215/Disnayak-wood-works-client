@@ -233,7 +233,7 @@ const [billAdvance, setBillAdvance] = useState({
                 areaWidth : catogoryDatat.areaWidth,
                 length: activeData.length,
                 toBeCutAmount: Number(activeData.toBeCutAmount) - Number(tobeCompleteAmount),
-                stk_id_fk: "CO",
+                stk_id_fk: `CO_${categoryData.billID}`,
                 status: "A",
                 billId_fk: billId,
                 createdBy: user.displayName,
