@@ -35,8 +35,12 @@ const BillDetailList = () => {
       headerName: "Total (RS:)",
       width: 130,
       renderCell: ({ row }) => {
-        const formattedAmount = new Intl.NumberFormat('en-GB').format(row.totalAmount);
-        return `${formattedAmount}.00`;
+        const formattedAmount = new Intl.NumberFormat('en-GB', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(row.totalAmount);
+
+        return formattedAmount;
       },
     },
     {
@@ -44,8 +48,12 @@ const BillDetailList = () => {
       headerName: "Advance (RS:)",
       width: 130,
       renderCell: ({ row }) => {
-        const formattedAmount = new Intl.NumberFormat('en-GB').format(row.advance);
-        return `${formattedAmount}.00`;
+        const formattedAmount = new Intl.NumberFormat('en-GB', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(row.advance);
+
+        return formattedAmount;
       },
     },
     {

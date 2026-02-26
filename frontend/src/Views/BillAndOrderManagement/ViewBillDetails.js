@@ -335,7 +335,6 @@ const [billAdvance, setBillAdvance] = useState({
   const handleComplete = async () => {
     // Get a list of categories where `isComplete` is false
     const incompleteCategories = categories.filter(category => !category.isComplete);
-  
     if (incompleteCategories.length > 0) {
       toast.warn("There are incomplete categories.");
     } else {

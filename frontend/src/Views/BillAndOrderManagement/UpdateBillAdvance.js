@@ -21,20 +21,21 @@ import { getbillAdvancesByBillId, createbillAdvance } from "../../services/BillA
 import { getbillDetailsById, updatebillDetails } from "../../services/BillAndOrderService/BilllManagemntService";
 import { newIncome } from "../../services/AccountManagementService/IncomeManagmentService";
 import { ToastContainer, toast } from "react-toastify";
+import { format, isValid } from "date-fns"; 
 
 const UpdateBillAdvance = ({ open, onClose, user, bill }) => {
 
-  const currentDate = useMemo(() => new Date(), []);
-  const currentDateTime = useMemo(() => currentDate.toISOString(), [currentDate]);
-
-  const formattedDate = useMemo(() => {
-    const y = currentDate.getFullYear();
-    const m = String(currentDate.getMonth() + 1).padStart(2, "0");
-    const d = String(currentDate.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  }, [currentDate]);
+  let currentDate = new Date();
+  let year = currentDate.getFullYear();
+  let month = ("0" + (currentDate.getMonth() + 1)).slice(-2);
+  let day = ("0" + currentDate.getDate()).slice(-2);
+  let formattedDate = `${year}-${month}-${day}`;
   
-
+const toYYYYMMDD = (date) => {
+  if (!date) return null;
+  const d = date instanceof Date ? date : new Date(date);
+  return isValid(d) ? format(d, "yyyy-MM-dd") : null;
+};
 
   const [billData, setBillData] = useState([]);
   const [tabIndex, setTabIndex] = useState(0);
@@ -73,7 +74,7 @@ const UpdateBillAdvance = ({ open, onClose, user, bill }) => {
       BillId : bill.id, 
       status: "A",
       createdBy: user.displayName,
-      createdDate: currentDateTime,
+      createdDate: formattedDate,
     }
     const AdvanceId = await createbillAdvance(payLoad);
 
@@ -88,14 +89,14 @@ const UpdateBillAdvance = ({ open, onClose, user, bill }) => {
       }
 
       const incomeId = await newIncome({
-                  date: newAdvance.date,
+                  date: toYYYYMMDD(newAdvance.date), 
                   type: `Advance-Bill`,
                   des: "Order Advance",
                   amount: newAdvance.amount,
                   BilId: bill.billID|| "",
                   status: "A",
                   createdBy: user.displayName,
-                  createdDate: currentDateTime,
+                  createdDate: formattedDate,
                 });
   
       if (incomeId) {
@@ -164,7 +165,7 @@ const UpdateBillAdvance = ({ open, onClose, user, bill }) => {
                 <TableBody>
                   {billData.map((bill, index) => (
                     <TableRow key={index}>
-                      <TableCell>{bill.createdDate}</TableCell>
+                      <TableCell>{bill.date}</TableCell>
                       <TableCell>{bill.amount}</TableCell>
                       <TableCell>{bill.description}</TableCell>
                     </TableRow>

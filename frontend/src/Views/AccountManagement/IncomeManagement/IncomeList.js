@@ -11,7 +11,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { format } from 'date-fns';
+import { format, parse } from "date-fns";
 
 const IncomeList = () => {
   const [categories, setCategories] = useState([]);
@@ -29,14 +29,29 @@ const IncomeList = () => {
       field: "date",
       headerName: "Date",
       width: 150,
-      renderCell: ({ value }) => format(new Date(value), 'yyyy-MM-dd'),
+      renderCell: ({ value }) => {
+        if (!value) return "-";
+
+        const dateObj = new Date(value);
+
+        if (isNaN(dateObj.getTime())) return "-";
+
+        return format(dateObj, "yyyy-MM-dd");
+      },
     },
     { field: "type", headerName: "Income Type", width: 150 },
     {
       field: "amount",
       headerName: "Amount (RS:)",
       width: 130,
-      renderCell: ({ row }) => `${row.amount}.00`,
+      renderCell: ({ row }) => {
+        const formattedAmount = new Intl.NumberFormat('en-GB', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(row.amount);
+
+        return formattedAmount;
+      },
     },
     { field: "BilId", headerName: "Bill ID", width: 150 },
     { field: "des", headerName: "Description", width: 180 },
