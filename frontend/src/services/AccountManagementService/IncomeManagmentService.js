@@ -7,6 +7,9 @@ import {
   updateDoc,
   doc,
   runTransaction,
+  query,
+  where,
+  orderBy,
 } from "firebase/firestore";
 
 const db = getFirestore();
@@ -88,6 +91,49 @@ export const getincomeById = async (incomeId) => {
     }
   } catch (error) {
     console.error("Error getting income: ", error.message);
+    throw error;
+  }
+};
+
+
+export const getActiveIncomeByDate = async ({ singleDate, startDate, endDate }) => {
+  try {
+    const incomeRef = collection(db, "income");
+    let q;
+
+    if (singleDate) {
+      q = query(
+        incomeRef,
+        where("status", "==", "A"),
+        where("date", "==", singleDate),
+        orderBy("date", "desc")
+      );
+    } else if (startDate && endDate) {
+      q = query(
+        incomeRef,
+        where("status", "==", "A"),
+        where("date", ">=", startDate),
+        where("date", "<=", endDate),
+        orderBy("date", "desc")
+      );
+    } else {
+      q = query(
+        incomeRef,
+        where("status", "==", "A"),
+        orderBy("date", "desc")
+      );
+    }
+
+    const querySnapshot = await getDocs(q);
+    const incomeList = [];
+
+    querySnapshot.forEach((doc) => {
+      incomeList.push({ id: doc.id, ...doc.data() });
+    });
+
+    return incomeList;
+  } catch (error) {
+    console.error("Error fetching active income by date: ", error.message);
     throw error;
   }
 };
