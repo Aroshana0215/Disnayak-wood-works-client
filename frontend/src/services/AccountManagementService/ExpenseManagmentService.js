@@ -7,7 +7,10 @@ import {
   setDoc,
   updateDoc,
   doc,
-  runTransaction
+  runTransaction,
+  query,
+  where,
+  orderBy,
 } from "firebase/firestore";
 
 const db = getFirestore();
@@ -92,6 +95,48 @@ export const getexpenseById = async (expenseId) => {
     }
   } catch (error) {
     console.error("Error getting expense: ", error.message);
+    throw error;
+  }
+};
+
+export const getActiveExpensesByDate = async ({ singleDate, startDate, endDate }) => {
+  try {
+    const expenseRef = collection(db, "expense");
+    let q;
+
+    if (singleDate) {
+      q = query(
+        expenseRef,
+        where("status", "==", "A"),
+        where("date", "==", singleDate),
+        orderBy("date", "desc")
+      );
+    } else if (startDate && endDate) {
+      q = query(
+        expenseRef,
+        where("status", "==", "A"),
+        where("date", ">=", startDate),
+        where("date", "<=", endDate),
+        orderBy("date", "desc")
+      );
+    } else {
+      q = query(
+        expenseRef,
+        where("status", "==", "A"),
+        orderBy("date", "desc")
+      );
+    }
+
+    const querySnapshot = await getDocs(q);
+    const expenseList = [];
+
+    querySnapshot.forEach((doc) => {
+      expenseList.push({ id: doc.id, ...doc.data() });
+    });
+
+    return expenseList;
+  } catch (error) {
+    console.error("Error fetching active expenses by date: ", error.message);
     throw error;
   }
 };

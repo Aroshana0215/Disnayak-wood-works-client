@@ -63,6 +63,7 @@ import UpdateWantsWood from "../Views/BillAndOrderManagement/UpdateWantsWood";
 import UpdateRemainWood from "../Views/BillAndOrderManagement/UpdateRemainWood";
 import ImageUploader from "../Views/Common/ImageUploader";
 import SwitchCategory from "../Views/InventoryManagement/StockManagement/SwitchCategory";
+import FinanceDashboard from "../Views/ReportAndSummary/FinanceDashboard.js";
 
 import ImportCubicValuesJSON from "../Views/import/ImportCubicValues.jsx";
 import CubicCalculate from "../Views/CubicCalculate/CubicCalculate.js";
@@ -287,6 +288,10 @@ const privateRouter = createBrowserRouter([
       {
         path: "/import",
         element: <ImportCubicValuesJSON />,
+      },
+      {
+        path: "/FinanceDashboard",
+        element: <FinanceDashboard />,
       },
       {
         path: "/cubicCalc",

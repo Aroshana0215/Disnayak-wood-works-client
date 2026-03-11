@@ -279,12 +279,12 @@ export default function MainSideBar() {
        {/* report section */}
         <ListItemButton
           onClick={handleReportClick}
-          selected={isSelected("/stockSummary") || isSelected("/expSummary")}
+          selected={isSelected("/stockSummary") || isSelected("/FinanceDashboard")}
         >
           <ListItemIcon
             sx={{
               color:
-                isSelected("/stockSummary") || isSelected("/expSummary")
+                isSelected("/stockSummary") || isSelected("/FinanceDashboard")
                   ? primaryColor
                   : secondaryColor,
             }}
@@ -295,7 +295,7 @@ export default function MainSideBar() {
             sx={{ marginLeft: "-18px" }}
             primaryTypographyProps={{
               color:
-                isSelected("/stockSummary") || isSelected("/expSummary")
+                isSelected("/stockSummary") || isSelected("/FinanceDashboard")
                   ? primaryColor
                   : secondaryColor,
             }}
@@ -315,12 +315,12 @@ export default function MainSideBar() {
                 }}
               />
             </ListItemButton>
-            <ListItemButton component={Link} to={"/expSummary"}>
+            <ListItemButton component={Link} to={"/FinanceDashboard"}>
               <ListItemIcon></ListItemIcon>
               <ListItemText
                 primary="Expenses Summary"
                 primaryTypographyProps={{
-                  color: isSelected("/expSummary") ? primaryColor : secondaryColor,
+                  color: isSelected("/FinanceDashboard") ? primaryColor : secondaryColor,
                 }}
               />
             </ListItemButton>
