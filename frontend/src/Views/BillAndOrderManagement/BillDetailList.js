@@ -236,10 +236,9 @@ const BillDetailList = () => {
 
     if (createdDate) {
       filteredData = filteredData.filter((category) => {
-        const categoryDate = new Date(
-          category.createdDate
-        ).toLocaleDateString();
-        const selectedDate = createdDate.toLocaleDateString();
+        const categoryDate = category.billCreatedDate?.toDate().toISOString().split('T')[0];
+        const selectedDate = createdDate.toISOString().split('T')[0];
+
         return categoryDate === selectedDate;
       });
     }
@@ -328,7 +327,7 @@ const BillDetailList = () => {
               <Box sx={{ height: "40px" }}>
                 <DatePicker sx={{ height: "40px" }}
                   size="small"
-                  label="Created Date"
+                  label="Bill date"
                   value={createdDate} 
                   onChange={(newValue) => setCreatedDate(newValue)}
                 />
