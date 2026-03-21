@@ -465,9 +465,8 @@ const [billAdvance, setBillAdvance] = useState({
               await updateStockSummaryDetails(data.id , stockSummaryData);
             }
 
-          toast.success("Cancellation completed successfully.");
         } catch (error) {
-          toast.error(`Failed to update category ID: ${category.id}`);
+          toast.error(`Failed to update category ID: ${category.categoryId_fk}`);
         }
       }
     }
