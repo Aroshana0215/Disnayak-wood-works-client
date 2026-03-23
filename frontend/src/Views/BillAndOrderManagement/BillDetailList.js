@@ -251,6 +251,10 @@ const BillDetailList = () => {
         );
 
         return categoryDateStr === selectedDateStr;
+        const categoryDate = category.billCreatedDate?.toDate().toISOString().split('T')[0];
+        const selectedDate = createdDate.toISOString().split('T')[0];
+
+        return categoryDate === selectedDate;
       });
     }
 

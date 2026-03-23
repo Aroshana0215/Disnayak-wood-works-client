@@ -114,7 +114,7 @@ const CreateCategory = () => {
           setIsplank(true);
           setIsTimberDust(false);
           setisLumber(false);
-        } else if (value === "Dust") {
+        } else if (value === "Dust" || value === "FireWood") {
           setIsplank(false);
           setIsTimberDust(true);
           setisLumber(false);

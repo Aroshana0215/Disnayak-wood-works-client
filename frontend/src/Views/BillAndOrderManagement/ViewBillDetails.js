@@ -38,6 +38,7 @@ const ViewBillDetails = () => {
   const [rerun, setRerun ]= useState(false);
 ;
   const [openDialog, setOpenDialog] = useState(false);
+  const [openCancelDialog, setCancelDialog] = useState(false);
   const [openAdvanceDialog, setOpenAdvanceDialog] = useState(false);
 
 
@@ -380,6 +381,15 @@ const [billAdvance, setBillAdvance] = useState({
 
   };
 
+  const handleCancelDialogBoxOpen = () => {
+      setCancelDialog(true); // Open the dialog when there are incomplete categories
+
+  };
+
+  const handleCancelDialogClose = () => {
+    setCancelDialog(false);
+  };
+
   const handleDialogClose = () => {
     setOpenDialog(false);
   };
@@ -632,7 +642,7 @@ const [billAdvance, setBillAdvance] = useState({
                   <Button
                     variant="contained"
                     color="error"
-                    onClick={handleDialogBoxOpen}
+                    onClick={handleCancelDialogBoxOpen}
                   >
                     Cancel
                   </Button>
@@ -647,8 +657,8 @@ const [billAdvance, setBillAdvance] = useState({
 
       {/* Confirmation cancle Dialog */}
       <CancelBillDialog
-        open={openDialog}
-        onClose={handleDialogClose}
+        open={openCancelDialog}
+        onClose={handleCancelDialogClose}
         onConfirm={handleDialogConfirm}
         />
 

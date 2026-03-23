@@ -428,7 +428,7 @@ const GetWantsWood = () => {
                     disabled={!canPickAmount}
                     MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
                   >
-                    {[...Array(101).keys()].map((num) => (
+                    {[...Array(301).keys()].map((num) => (
                       <MenuItem key={num} value={num}>
                         {num}
                       </MenuItem>
