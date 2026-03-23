@@ -26,6 +26,14 @@ const BillDetailList = () => {
   const [selectedBill, setSelectedBill] = useState(null); 
   const { user } = useSelector((state) => state.auth);
 
+  const formatLocalDate = (date) => {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
   const columns = [
     { field: "billID", headerName: "ID", width: 90 },
     { field: "billBookNo", headerName: "Bill No", width: 80 },
@@ -235,12 +243,14 @@ const BillDetailList = () => {
     }
 
     if (createdDate) {
+      const selectedDateStr = formatLocalDate(createdDate);
+
       filteredData = filteredData.filter((category) => {
-        const categoryDate = new Date(
-          category.createdDate
-        ).toLocaleDateString();
-        const selectedDate = createdDate.toLocaleDateString();
-        return categoryDate === selectedDate;
+        const categoryDateStr = formatLocalDate(
+          category.billCreatedDate?.toDate()
+        );
+
+        return categoryDateStr === selectedDateStr;
       });
     }
 
@@ -328,7 +338,7 @@ const BillDetailList = () => {
               <Box sx={{ height: "40px" }}>
                 <DatePicker sx={{ height: "40px" }}
                   size="small"
-                  label="Created Date"
+                  label="Bill date"
                   value={createdDate} 
                   onChange={(newValue) => setCreatedDate(newValue)}
                 />
