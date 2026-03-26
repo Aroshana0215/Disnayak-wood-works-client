@@ -100,12 +100,22 @@ const IncomeList = () => {
   const handleSearch = () => {
     let filteredData = categories;
 
-    if (dateQuery) {
-      const formattedDate = format(dateQuery, 'yyyy-MM-dd');
-      filteredData = filteredData.filter(category =>
-        category.date.includes(formattedDate)
-      );
-    }
+        if (dateQuery) {
+          const formattedDate = format(dateQuery, 'yyyy-MM-dd');
+
+          filteredData = filteredData.filter(function (category) {
+            if (!category.date) return false;
+
+            const dateObj = new Date(category.date);
+
+            // ✅ prevent "Invalid time value"
+            if (isNaN(dateObj.getTime())) return false;
+
+            const categoryDate = format(dateObj, 'yyyy-MM-dd');
+
+            return categoryDate === formattedDate;
+          });
+}
 
     if (incomeTypeQuery) {
       const lowercasedIncomeTypeQuery = incomeTypeQuery.toLowerCase();

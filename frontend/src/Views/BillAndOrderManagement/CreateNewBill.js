@@ -273,7 +273,7 @@ const CreateNewBill = () => {
           else if (Number(formData.advance) > 0) incomeAmount = formData.advance;
 
           const incomeId = await newIncome({
-            date: formData.billCreatedDate,
+            date: new Date(formData.billCreatedDate).toISOString(),
             type: `${formData.billStatus}-Bill`,
             des: `${formData.billStatus} bill in bill creation`,
             amount: incomeAmount,
