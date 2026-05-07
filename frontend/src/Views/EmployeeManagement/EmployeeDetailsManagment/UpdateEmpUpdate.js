@@ -77,6 +77,7 @@ const UpdateEmpUpdate = () => {
     if (!employee?.lastName?.trim()) temp.lastName = "Last name is required";
     if (!employee?.phoneNo?.trim()) temp.phoneNo = "Phone number is required";
     if (!employee?.nic?.trim()) temp.nic = "NIC is required";
+     if (!employee?.currentLendAmount?.trim()) temp.nic = "Lend Amont is required";
     if (!employee?.holidayRate?.trim()) temp.holidayRate = "Holiday Rate is required";
 
     // Salary validation - validate only the visible one
@@ -123,6 +124,7 @@ const UpdateEmpUpdate = () => {
       joinDate: employee.joinDate ?? "",
       holidayRate: employee.holidayRate ?? "",
       otValuePerHour: employee.otValuePerHour ?? "",
+      currentLendAmount: employee.currentLendAmount ?? "",
       employeeImage: employee.employeeImage ?? "",
       status: employee.status ?? "A",
 
@@ -339,6 +341,19 @@ const UpdateEmpUpdate = () => {
                 size="small"
               />
             </Grid>
+
+            
+             {/* Holiday Rate*/}
+            <Grid item xs={12} md={6}>
+              <TextField
+                name="currentLendAmount"
+                label="Cuurent Lend Amont"
+                value={employee.currentLendAmount ?? ""}
+                onChange={handleChange}
+                fullWidth
+                size="small"
+              />
+            </Grid>  
 
             {/* Status */}
             <Grid item xs={12} md={6} display="flex" alignItems="center">
